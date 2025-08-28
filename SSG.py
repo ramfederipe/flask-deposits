@@ -4,14 +4,26 @@ from datetime import datetime
 import pandas as pd
 import numpy as np
 from flask import Flask, render_template, request, redirect, url_for,jsonify
+from flask_asgi import ASGIApp
+from asgiref.wsgi import WsgiToAsgi
+
 from werkzeug.utils import secure_filename
 from sqlalchemy import create_engine, func, or_
 from sqlalchemy.orm import sessionmaker, scoped_session
 from models import Base, Deposit  # make sure Deposit model has "deleted = Column(Boolean, default=False)"
 from flask import Flask
 from models import Base
-Base.metadata.create_all(engine)
 
+
+engine = create_engine(
+    "mysql+pymysql://flaskuser:flaskpass@localhost:3306/flaskdb",
+    echo=True
+)
+
+Session = sessionmaker(bind=engine)
+session = Session()
+
+Base.metadata.create_all(engine)
 
 
 # --- Flask setup ---
@@ -19,15 +31,20 @@ app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
+
+asgi_app = ASGIApp(app)
+asgi_app = WsgiToAsgi(app)
+
 def parse_datetime(dt_str):
-    if dt_str:
+    if not dt_str:
+        return None
+    for fmt in ("%Y-%m-%d %H:%M:%S", "%d/%m/%Y %H:%M:%S"):
         try:
-            # Try format YYYY-MM-DD first
-            return datetime.strptime(dt_str, "%Y-%m-%d %H:%M:%S")
+            return datetime.strptime(dt_str, fmt)
         except ValueError:
-            # Fallback to DD/MM/YYYY format
-            return datetime.strptime(dt_str, "%d/%m/%Y %H:%M:%S")
+            continue
     return None
+
 
 def parse_float(value):
     if value is None:
@@ -79,11 +96,6 @@ def fmt_dt(v):
         return v.strftime("%Y-%m-%d %H:%M:%S")
     return "" if v is None else v
 
-
-# --- Database setup ---
-engine = create_engine("mysql+pymysql://username:password@hostname/dbname")
-Session = sessionmaker(bind=engine)
-session = Session()
 
 def df_to_html_with_class(df):
     html = '<table class="excel-table"><thead><tr>'
@@ -329,7 +341,7 @@ def deleted_deposits():
 # ---------- DELETE DEPOSIT ----------
 @app.route('/deposit/delete/<int:deposit_id>', methods=['POST'])
 def delete_deposit(deposit_id):
-    deposit = session.query(Deposit).get(deposit_id)
+    deposit = session.get(Deposit, deposit_id)
     if deposit:
         deposit.deleted = True
         session.commit()

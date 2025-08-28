@@ -1,0 +1,12 @@
+{
+  "apps": [
+    {
+      "app_id": "app_90b631c2-20b9-4984-9aed-851acd241461",
+      "org_id": "user_0a13d4e9-cdc8-4063-9618-063da8ddd118",
+      "deploy_url": "https://push-n3-par-clevercloud-customers.services.clever-cloud.com/app_90b631c2-20b9-4984-9aed-851acd241461.git",
+      "git_ssh_url": "git+ssh://git@push-n3-par-clevercloud-customers.services.clever-cloud.com/app_90b631c2-20b9-4984-9aed-851acd241461.git",
+      "name": "ssg 2.1",
+      "alias": "ssg-21"
+    }
+  ]
+}
