@@ -1,0 +1,324 @@
+{% extends "base.html" %}
+
+{% block title %}Deposit Upload{% endblock %}
+
+{% block extra_css %}
+<!-- DataTables CSS -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
+
+<style>
+.delete-btn {
+    background-color: #ef4444;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+}
+.delete-btn:hover { background-color: #dc2626; }
+</style>
+{% endblock %}
+
+{% block content %}
+<h2 class="text-2xl font-bold mb-4">Deposit</h2>
+
+<div class="flex justify-between items-start mb-4 flex-wrap gap-4">
+    <!-- Left: Search + Filters + Column Hide -->
+    <div class="flex gap-2 flex-wrap items-center">
+
+
+        <select id="merchantFilter" class="border p-2 rounded">
+            <option value="">All Merchants</option>
+            {% for m in merchant_codes %}
+                <option value="{{m}}" {% if params['merchant_code']==m %}selected{% endif %}>{{m}}</option>
+            {% endfor %}
+        </select>
+
+        <select id="bankFilter" class="border p-2 rounded">
+            <option value="">All Banks</option>
+            {% for b in banks %}
+                <option value="{{b}}" {% if params['bank']==b %}selected{% endif %}>{{b}}</option>
+            {% endfor %}
+        </select>
+
+        <select id="statusFilter" class="border p-2 rounded">
+            <option value="">All Status</option>
+            {% for s in statuses %}
+                <option value="{{s}}" {% if params['status']==s %}selected{% endif %}>{{s}}</option>
+            {% endfor %}
+        </select>
+
+        <select id="depositTypeFilter" class="border p-2 rounded">
+            <option value="">All Types</option>
+            {% for d in deposit_types %}
+                <option value="{{d}}" {% if params['deposit_type']==d %}selected{% endif %}>{{d}}</option>
+            {% endfor %}
+        </select>
+
+        <select id="hideColumnSelect" class="border p-2 rounded">
+            <option value="">Select column</option>
+            {% for col in columns %}
+                <option value="{{format_header(col)}}">{{format_header(col)}}</option>
+            {% endfor %}
+            <option value="Actions">Actions</option>
+        </select>
+        <button id="toggleColumnBtn" class="bg-gray-600 text-white p-2 rounded">Hide/Show Column</button>
+    </div>
+
+ <button id="resetFilters" class="bg-red-600 text-white p-2 rounded">Reset Filter</button>
+
+<!-- Filters Section -->
+<div class="flex gap-6">
+
+    <!-- Right side (Date Filter + Buttons) -->
+    <div class="flex items-center gap-2">
+        <label class="text-sm">Created (Multi):</label>
+        <input type="text" id="createdMulti" class="border p-1 rounded text-sm">
+
+        <label class="text-sm">Updated (Multi):</label>
+        <input type="text" id="updatedMulti" class="border p-1 rounded text-sm">
+
+
+        <button id="applyDateBtn" class="bg-blue-600 text-white p-2 rounded">View</button>
+        <button id="prevDate" class="bg-gray-500 text-white p-1 rounded">Previous</button>
+        <button id="nextDate" class="bg-gray-500 text-white p-1 rounded">Next</button>
+    </div>
+
+</div>
+
+
+
+
+    <!-- Right: Upload + Export -->
+    <div class="flex gap-2 flex-wrap">
+        <form method="POST" action="{{ url_for('deposit') }}" enctype="multipart/form-data" class="flex gap-2">
+            <input type="file" name="excel_file" accept=".xlsx,.xls" class="border p-2 rounded">
+            <button type="submit" class="bg-blue-600 text-white p-2 rounded">Upload</button>
+        </form>
+
+    </div>
+
+    <button id="viewDeletedBtn" class="bg-gray-800 text-white p-2 rounded flex items-center gap-1">
+    <span>🗑️</span> Deleted Deposits
+
+
+
+</button>
+
+
+
+
+<div id="loading" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center text-white text-xl">
+    Loading Deleted Deposits...
+</div>
+
+</div>
+
+
+
+
+
+<div id="tableContainer">
+    {{ table_html|safe }}
+</div>
+
+    <script>
+$('#depositTable').DataTable({
+    dom: 'Bfrtip',
+    buttons: ['csv', 'excel'],
+    pageLength: 25,
+    order: [[0, 'desc']]
+});
+
+</script>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+<script type="module" src="{{ url_for('static', filename='js/depositFilters.js') }}"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+
+
+<script>
+$(document).ready(function() {
+    const table = $('#depositTable').DataTable({
+        dom: 'Bfrtip',
+        buttons: [
+            { extend: 'csvHtml5', text: 'Export CSV', className: 'bg-green-600 text-white p-2 rounded' },
+            { extend: 'excelHtml5', text: 'Export Excel', className: 'bg-blue-600 text-white p-2 rounded' }
+        ],
+        pageLength: 25,
+        order: [[0, 'desc']]
+    });
+
+    // Load hidden columns from localStorage
+    const hiddenColumnsKey = 'hiddenColumnsDeposit';
+    const hiddenColumns = JSON.parse(localStorage.getItem(hiddenColumnsKey)) || [];
+    hiddenColumns.forEach(idx => table.column(idx).visible(false));
+
+    // Column hide/show
+    $('#toggleColumnBtn').on('click', function() {
+        const colName = $('#hideColumnSelect').val();
+        if (!colName) return;
+
+        let colIndex = -1;
+        table.columns().every(function(idx) {
+            if ($(this.header()).text().trim().toLowerCase() === colName.toLowerCase()) colIndex = idx;
+        });
+        if (colIndex === -1) { alert("Column not found!"); return; }
+
+        const visible = table.column(colIndex).visible();
+        table.column(colIndex).visible(!visible);
+
+        let hidden = JSON.parse(localStorage.getItem(hiddenColumnsKey)) || [];
+        if (!visible) hidden = hidden.filter(i => i !== colIndex);
+        else if (!hidden.includes(colIndex)) hidden.push(colIndex);
+        localStorage.setItem(hiddenColumnsKey, JSON.stringify(hidden));
+    });
+
+    // Filters
+    const filterColumns = {
+        merchant: '{{ columns.index("merchant_code") }}',
+        bank: '{{ columns.index("bank") }}',
+        status: '{{ columns.index("status") }}',
+        depositType: '{{ columns.index("deposit_type") }}'
+    };
+
+    $('#merchantFilter').on('change', function(){ table.column(filterColumns.merchant).search(this.value).draw(); });
+    $('#bankFilter').on('change', function(){ table.column(filterColumns.bank).search(this.value).draw(); });
+    $('#statusFilter').on('change', function(){ table.column(filterColumns.status).search(this.value).draw(); });
+    $('#depositTypeFilter').on('change', function(){ table.column(filterColumns.depositType).search(this.value).draw(); });
+
+    //Range date filtering
+$.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
+    const createdStr = (data[{{ columns.index("created_time") }}] || '').split(" ")[0];
+    const updatedStr = (data[{{ columns.index("updated_time") }}] || '').split(" ")[0];
+
+    // Convert to Date objects
+    const createdVal = createdStr ? new Date(createdStr) : null;
+    const updatedVal = updatedStr ? new Date(updatedStr) : null;
+
+    const createdRange = $("#createdMulti").val().split(" to ");
+    const updatedRange = $("#updatedMulti").val().split(" to ");
+
+    let createdMatch = true, updatedMatch = true;
+
+    if (createdRange.length === 2) {
+        const start = new Date(createdRange[0]);
+        const end = new Date(createdRange[1]);
+        if (createdVal) {
+            createdMatch = createdVal >= start && createdVal <= end;
+        }
+    }
+
+    if (updatedRange.length === 2) {
+        const start = new Date(updatedRange[0]);
+        const end = new Date(updatedRange[1]);
+        if (updatedVal) {
+            updatedMatch = updatedVal >= start && updatedVal <= end;
+        }
+    }
+
+    return createdMatch && updatedMatch;
+});
+
+
+const createdPicker = flatpickr("#createdMulti", {
+    mode: "range",
+    dateFormat: "Y-m-d",
+    onChange: function() { table.draw(); }
+});
+
+const updatedPicker = flatpickr("#updatedMulti", {
+    mode: "range",
+    dateFormat: "Y-m-d",
+    onChange: function() { table.draw(); }
+});
+
+    $('#createdMulti, #updatedMulti').on('change', function() {
+        table.draw();
+    });
+
+    // Search functionality
+    $('#searchInput').on('keypress', function(e){
+        if(e.which === 13){
+            e.preventDefault();
+            const searchVal = $('#searchInput').val();
+            table.search(searchVal).draw();
+        }
+    });
+
+    // Show Deleted Deposits
+    let showDeleted = false;
+    $('#viewDeletedBtn').on('click', function() {
+        if (!showDeleted){
+            $('#loading').removeClass('hidden');
+            $.getJSON("/deleted_deposits", function(data){
+                table.clear();
+                data.forEach(row => {
+                    table.row.add([
+                        row.id || '', row.deposit_type || '', row.merchant_code || '', row.customer || '',
+                        row.txnid || '', row.currency || '', row.bank || '', row.from_account || '',
+                        row.to_account || '', row.amount || '', row.original_amount || '', row.rebalance || '',
+                        row.fee || '', row.created_time || '', row.updated_time || '', row.transfer_time || '',
+                        row.status || '', row.audit || '', row.note_message || '', row.refcode || '',
+                        row.approve_by || '', row.matched_by || '', row.confirm_by || '', row.last_updated || '',
+                        `<a href='/deposit/restore/${row.id}' title='Restore'>♻️</a>
+                        <a href='/deposit/permanent_delete/${row.id}' title='Delete'>🗑️</a>`
+                    ]);
+                });
+                table.draw();
+                $('#loading').addClass('hidden');
+                $('#viewDeletedBtn').text('View All Deposits');
+                showDeleted = true;
+            });
+        } else {
+            window.location.href = "/deposit";
+        }
+    });
+
+    // Initialize Flatpickr multi-date pickers
+    flatpickr("#createdMulti", { mode: "range", dateFormat: "Y-m-d", onChange: function() { table.draw(); } });
+    flatpickr("#updatedMulti", { mode: "range", dateFormat: "Y-m-d", onChange: function() { table.draw(); } });
+
+
+
+});
+
+$("#resetFilters").on("click", function () {
+    $("#merchantFilter, #bankFilter, #statusFilter, #depositTypeFilter").val("").trigger("change");
+    $("#searchInput").val("");
+    table.search("").draw();
+
+    createdPicker.clear();
+    updatedPicker.clear();
+
+    table.draw();
+});
+
+
+$("#resetFilters").on("click", function () {
+    $("#merchantFilter, #bankFilter, #statusFilter, #depositTypeFilter").val("").trigger("change");
+    $("#searchInput").val("");
+    table.search("").draw();
+
+    createdPicker.clear();
+    updatedPicker.clear();
+
+    table.draw();
+});
+
+</script>
+
+
+
+{% endblock %}

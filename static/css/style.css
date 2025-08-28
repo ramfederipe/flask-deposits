@@ -1,0 +1,52 @@
+/* Modern Button */
+.modern-btn {
+    color: black;
+    font-weight: 500; /* fixed from 3 */
+    font-size: 14px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    transition: all 0.2s ease;
+}
+
+.modern-btn:hover {
+    background: linear-gradient(135deg, #1d4ed8, #2563eb);
+    box-shadow: 0 6px 10px rgba(0,0,0,0.15);
+    transform: translateY(-2px);
+}
+
+.modern-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 3px 5px rgba(0,0,0,0.1);
+}
+
+/* Pagination */
+.pagination {
+    margin-top: 10px;
+}
+
+.pagination a {
+    padding: 5px 10px;
+    margin: 0 3px;
+    text-decoration: none;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    color: #1d4ed8;
+    transition: background-color 0.2s ease;
+}
+
+.pagination a:hover {
+    background-color: #e0f2fe;
+}
+
+.pagination .current {
+    padding: 5px 10px;
+    margin: 0 3px;
+    font-weight: bold;
+    border: 1px solid #1d4ed8;
+    border-radius: 4px;
+    background-color: #1d4ed8;
+    color: white;
+}

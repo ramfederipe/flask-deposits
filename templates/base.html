@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Agent Balance Monitoring{% endblock %}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Roboto', sans-serif; }
+        body { display: flex; min-height: 100vh; flex-direction: column; background-color: #f4f6f8; color: #333; }
+
+        /* Header */
+        header { background-color: #1e293b; color: #fff; display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; position: sticky; top: 0; z-index: 10; }
+        .header-left, .header-right { display: flex; align-items: center; gap: 15px; }
+        .header-item { background-color: #334155; padding: 5px 10px; border-radius: 5px; font-size: 14px; }
+        .header-item select { padding: 4px; border-radius: 5px; border: none; }
+
+        /* Layout */
+        .container { display: flex; flex: 1; }
+
+        /* Sidebar */
+        aside { width: 220px; background-color: #0f172a; color: #fff; display: flex; flex-direction: column; transition: width 0.3s; }
+        aside.collapsed { width: 60px; }
+        aside ul { list-style: none; margin-top: 20px; padding-left: 0; }
+        aside ul li { padding: 15px 20px; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: background 0.3s; }
+        aside ul li:hover { background-color: #1e293b; }
+        aside ul li i { width: 20px; text-align: center; }
+        aside.collapsed ul li span { display: none; }
+        aside ul li a { color: inherit; text-decoration: none; width: 100%; display: flex; align-items: center; gap: 10px; }
+
+        /* Toggle button */
+        .toggle-btn { margin: 10px; cursor: pointer; }
+
+        /* Main content */
+        main { flex: 1; padding: 20px; display: flex; flex-direction: column; gap: 20px; }
+
+        /* Card */
+        .card { background-color: #fff; border-radius: 10px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); overflow-x: auto; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 10px 15px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background-color: #1e293b; color: #fff; }
+        tr.low { background-color: #fee2e2; }      /* Red for low balance */
+        tr.medium { background-color: #fef3c7; }   /* Yellow for medium balance */
+        tr.high { background-color: #dcfce7; }     /* Green for high balance */
+
+        /* Footer */
+        footer { background-color: #1e293b; color: #fff; text-align: center; padding: 10px 20px; font-size: 14px; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            aside { position: fixed; left: -220px; top: 0; height: 100%; z-index: 20; }
+            aside.show { left: 0; }
+            .container { flex-direction: column; }
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="header-left">
+            <i class="fas fa-bars toggle-btn" onclick="toggleSidebar()"></i>
+            <div class="header-item">Account: {% block account_name %}Dindo{% endblock %}</div>
+            <div class="header-item">
+                Language:
+                <select>
+                    <option>English</option>
+                    <option>Filipino</option>
+                    <option>Spanish</option>
+                </select>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="header-item">
+                Server Time: <span id="server-time">--:--:--</span>
+            </div>
+            <div class="header-item">
+                GMT:
+                <select id="gmt" onchange="updateServerTime()">
+                    <option value="-12">GMT -12</option>
+                    <option value="-8">GMT -8</option>
+                    <option value="0" selected>GMT 0</option>
+                    <option value="8">GMT +8</option>
+                    <option value="12">GMT +12</option>
+                </select>
+            </div>
+        </div>
+    </header>
+
+    <!-- Sidebar + Main -->
+    <div class="container">
+        <aside id="sidebar">
+            <ul>
+                <li><a href="{{ url_for('dashboard') }}"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a></li>
+                <li><a href="{{ url_for('deposit') }}"><i class="fas fa-wallet"></i> <span>Deposit</span></a></li>
+                <li><a href="{{ url_for('withdrawal') }}"><i class="fas fa-money-bill-transfer"></i> <span>Withdrawal</span></a></li>
+                <li><a href="{{ url_for('accounts') }}"><i class="fas fa-users"></i> <span>Accounts</span></a></li>
+                <li><a href="{{ url_for('settings') }}"><i class="fas fa-cog"></i> <span>Settings</span></a></li>
+            </ul>
+        </aside>
+        <main>
+            {% block content %}
+            <!-- Page-specific content goes here -->
+            {% endblock %}
+        </main>
+    </div>
+
+
+
+
+
+    <!-- Footer -->
+    <footer>
+        &copy; Dindo | Tools used: HTML, CSS, JS, FontAwesome
+    </footer>
+
+    <script>
+        // Sidebar toggle
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('collapsed');
+        }
+
+        // Server time display
+        const serverTimeEl = document.getElementById('server-time');
+        const gmtSelect = document.getElementById('gmt');
+
+        function updateServerTime() {
+            const now = new Date();
+            const gmtOffset = parseInt(gmtSelect.value);
+            const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+            const localTime = new Date(utc + gmtOffset * 3600000);
+            const hours = String(localTime.getHours()).padStart(2,'0');
+            const minutes = String(localTime.getMinutes()).padStart(2,'0');
+            const seconds = String(localTime.getSeconds()).padStart(2,'0');
+            serverTimeEl.textContent = `${hours}:${minutes}:${seconds}`;
+        }
+
+        setInterval(updateServerTime, 1000);
+        updateServerTime();
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

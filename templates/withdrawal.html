@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}Withdrawal Upload{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Withdrawal Upload</h2>
+    <form method="POST" action="{{ url_for('withdrawal') }}" enctype="multipart/form-data">
+    <input type="file" name="excel_file" accept=".xlsx,.xls">
+    <button type="submit">Upload</button>
+</form>
+
+
+    {% if table_html %}
+        <div style="margin-top:20px;">
+            {{ table_html|safe }}
+            <p><small>Color coding: Green = High, Yellow = Medium, Red = Low balance</small></p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .excel-table th { background-color: #1e293b; color: #fff; padding: 12px; }
+    .excel-table td { padding: 10px; }
+    .excel-table tr.low { background-color: #fee2e2; }
+    .excel-table tr.medium { background-color: #fef3c7; }
+    .excel-table tr.high { background-color: #dcfce7; }
+</style>
+{% endblock %}

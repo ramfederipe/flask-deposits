@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}Deposit Bin{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+
+
+{% endblock %}
+
+{% block content %}
+<h2 class="text-2xl font-bold mb-4">Deleted Deposits</h2>
+<div class="mb-4">
+    <a href="{{ url_for('deposit') }}" class="bg-blue-600 text-white p-2 rounded">Back to Deposits</a>
+</div>
+
+<div class="flex gap-2 mb-4">
+    <label class="text-sm">Created Dates:</label>
+    <input type="text" id="createdMulti" class="border p-1 rounded text-sm" placeholder="Select multiple dates">
+
+    <label class="text-sm">Updated Dates:</label>
+    <input type="text" id="updatedMulti" class="border p-1 rounded text-sm" placeholder="Select multiple dates">
+</div>
+
+
+
+<div id="tableContainer">
+    {{ table_html|safe }}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+
+<script>
+$(document).ready(function() {
+    const table = $('#binTable').DataTable({
+        dom: 'Bfrtip',
+        buttons: [
+            { extend: 'csvHtml5', text: 'Export CSV', className: 'bg-green-600 text-white p-2 rounded' },
+            { extend: 'excelHtml5', text: 'Export Excel', className: 'bg-blue-600 text-white p-2 rounded' }
+        ],
+        pageLength: 25,
+        order: [[0, 'desc']]
+    });
+
+    // Initialize Flatpickr
+    flatpickr("#createdMulti", { mode: "multiple", dateFormat: "Y-m-d" });
+    flatpickr("#updatedMulti", { mode: "multiple", dateFormat: "Y-m-d" });
+
+    // Custom filter for multi-date
+    $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
+        const createdVal = (data[13] || '').split(" ")[0]; // adjust index for Created Time
+        const updatedVal = (data[14] || '').split(" ")[0]; // adjust index for Updated Time
+
+        const createdDates = $("#createdMulti").val().split(", ");
+        const updatedDates = $("#updatedMulti").val().split(", ");
+
+        const createdMatch = createdDates.length === 0 || createdDates.includes(createdVal);
+        const updatedMatch = updatedDates.length === 0 || updatedDates.includes(updatedVal);
+
+        return createdMatch && updatedMatch;
+    });
+
+    // Trigger filter on change
+    $('#createdMulti, #updatedMulti').on('change', function() {
+        table.draw();
+    });
+});
+
+</script>
+{% endblock %}
