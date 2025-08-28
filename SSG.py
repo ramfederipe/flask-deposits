@@ -4,8 +4,6 @@ from datetime import datetime
 import pandas as pd
 import numpy as np
 from flask import Flask, render_template, request, redirect, url_for,jsonify
-
-
 from werkzeug.utils import secure_filename
 from sqlalchemy import create_engine, func, or_
 from sqlalchemy.orm import sessionmaker, scoped_session
@@ -31,6 +29,8 @@ app.config['UPLOAD_FOLDER'] = 'uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 
+asgi_app = ASGIApp(app)
+asgi_app = WsgiToAsgi(app)
 
 def parse_datetime(dt_str):
     if not dt_str:
@@ -462,3 +462,10 @@ if __name__ == '__main__':
 
 
 
+
+
+
+from asgiref.wsgi import WsgiToAsgi
+
+# Wrap your Flask app for ASGI
+asgi_app = WsgiToAsgi(app)
