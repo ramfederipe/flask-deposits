@@ -20,3 +20,7 @@ ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIILdujyDDkhhR+PUvoHvtNic4cE5Ys0imRMKYCW8QwWZ
 
 clever  git@push.clever-cloud.com:app_90b631c2-20b9-4984-9aed-851acd241461.git (fetch)
 clever  git@push.clever-cloud.com:app_90b631c2-20b9-4984-9aed-851acd241461.git (push)
+
+git remote add clever app_90b631c2-20b9-4984-9aed-851acd241461.git
+git push clever main:master
+
