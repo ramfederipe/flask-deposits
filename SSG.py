@@ -29,9 +29,6 @@ app.config['UPLOAD_FOLDER'] = 'uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 
-asgi_app = ASGIApp(app)
-asgi_app = WsgiToAsgi(app)
-
 def parse_datetime(dt_str):
     if not dt_str:
         return None
@@ -461,11 +458,3 @@ if __name__ == '__main__':
 
 
 
-
-
-
-
-from asgiref.wsgi import WsgiToAsgi
-
-# Wrap your Flask app for ASGI
-asgi_app = WsgiToAsgi(app)
