@@ -4,7 +4,6 @@ from datetime import datetime
 import pandas as pd
 import numpy as np
 from flask import Flask, render_template, request, redirect, url_for,jsonify
-
 from werkzeug.utils import secure_filename
 from sqlalchemy import create_engine, func, or_
 from sqlalchemy.orm import sessionmaker, scoped_session
