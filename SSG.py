@@ -461,3 +461,14 @@ def settings():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+
+
+
+
+
+
+from asgiref.wsgi import WsgiToAsgi
+
+# Wrap your Flask app for ASGI
+asgi_app = WsgiToAsgi(app)
