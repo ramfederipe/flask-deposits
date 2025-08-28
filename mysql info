@@ -24,3 +24,5 @@ clever  git@push.clever-cloud.com:app_90b631c2-20b9-4984-9aed-851acd241461.git (
 git remote add clever app_90b631c2-20b9-4984-9aed-851acd241461.git
 git push clever main:master
 
+git commit -m "Update MySQL info and requirements"
+git push clever main:master
