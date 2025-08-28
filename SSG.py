@@ -4,8 +4,6 @@ from datetime import datetime
 import pandas as pd
 import numpy as np
 from flask import Flask, render_template, request, redirect, url_for,jsonify
-from flask_asgi import ASGIApp
-from asgiref.wsgi import WsgiToAsgi
 
 from werkzeug.utils import secure_filename
 from sqlalchemy import create_engine, func, or_
@@ -22,7 +20,6 @@ engine = create_engine(
 
 Session = sessionmaker(bind=engine)
 session = Session()
-
 Base.metadata.create_all(engine)
 
 
@@ -32,8 +29,8 @@ app.config['UPLOAD_FOLDER'] = 'uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 
-asgi_app = ASGIApp(app)
-asgi_app = WsgiToAsgi(app)
+
+
 
 def parse_datetime(dt_str):
     if not dt_str:
@@ -148,6 +145,9 @@ def get_filtered_deposits(params):
     return query.all()
 
 
+@app.route('/')
+def dashboard():
+    return render_template('dashboard.html')
 
 @app.route('/deposit', methods=['GET', 'POST'])
 def deposit():
@@ -443,10 +443,6 @@ def withdrawal():
     return render_template('withdrawal.html', table_html=table_html)
 
 
-# --- Dashboard & Static Pages ---
-@app.route('/')
-def dashboard():
-    return render_template('dashboard.html')
 
 
 @app.route('/accounts')
@@ -459,16 +455,11 @@ def settings():
     return render_template('settings.html')
 
 
-if __name__ == '__main__':
-    app.run(debug=True)
 
 
+if __name__ == "__main__":
+    import os
+    port = int(os.environ.get("PORT", 8000))  # Clever Cloud sets PORT
+    app.run(host="0.0.0.0", port=port, debug=True)
 
 
-
-
-
-from asgiref.wsgi import WsgiToAsgi
-
-# Wrap your Flask app for ASGI
-asgi_app = WsgiToAsgi(app)
