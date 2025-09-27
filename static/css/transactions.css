@@ -1,0 +1,119 @@
+/* transactions.css - Tailwind Compatible */
+
+/* Main container */
+.transactions-container {
+    @apply flex flex-col gap-5 p-5;
+}
+
+/* Page Header */
+.transactions-header {
+    @apply flex flex-wrap justify-between items-center bg-white p-5 rounded-xl shadow-md;
+}
+
+.transactions-header h2 {
+    @apply text-2xl font-bold text-gray-900;
+}
+
+/* Buttons */
+.button {
+    @apply font-semibold py-2 px-4 rounded-md cursor-pointer transition-all duration-200;
+}
+
+.button-primary {
+    @apply bg-blue-600 text-white hover:bg-blue-700;
+}
+
+.button-danger {
+    @apply bg-red-600 text-white hover:bg-red-700;
+}
+
+.button-secondary {
+    @apply bg-gray-200 text-gray-900 hover:bg-gray-300;
+}
+
+/* Filters Section */
+.transactions-filters {
+    @apply flex flex-wrap items-center gap-4 bg-white p-4 rounded-xl shadow-md sticky top-0 z-10;
+}
+
+.transactions-filters form {
+    @apply flex flex-wrap items-center gap-4 w-full;
+}
+
+.transactions-filters label {
+    @apply mb-0 whitespace-nowrap;
+}
+
+.transactions-filters input,
+.transactions-filters select {
+    @apply p-2 rounded-md border border-gray-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-200 outline-none;
+}
+
+.transactions-filters button,
+.transactions-filters a.button {
+    @apply mt-0;
+}
+
+/* Table Card */
+.transactions-table-card {
+    @apply bg-white rounded-xl p-5 shadow-md overflow-x-auto;
+}
+
+/* Table */
+.excel-table {
+    @apply w-full border-collapse text-sm;
+}
+
+.excel-table th {
+    @apply bg-gray-900 text-white p-3 text-left;
+}
+
+.excel-table td {
+    @apply p-2 border-b border-gray-200;
+}
+
+.excel-table tr:hover {
+    @apply bg-gray-100 transition duration-200;
+}
+
+.excel-table tr.low {
+    @apply bg-red-100;
+}
+
+.excel-table tr.medium {
+    @apply bg-yellow-100;
+}
+
+.excel-table tr.high {
+    @apply bg-green-100;
+}
+
+/* Pagination */
+.pagination {
+    @apply flex justify-center mt-5 gap-2;
+}
+
+.pagination a {
+    @apply px-3 py-2 rounded-md border border-gray-300 text-gray-900 font-medium transition-all duration-200;
+}
+
+.pagination a:hover {
+    @apply bg-blue-600 text-white;
+}
+
+.pagination a.active {
+    @apply bg-gray-900 text-white;
+}
+
+/* DataTables Pagination */
+.dataTables_paginate a {
+    @apply px-3 py-2 rounded-md border border-gray-300 text-gray-900 font-medium transition-all duration-200 mx-1;
+}
+
+.dataTables_paginate a:hover {
+    @apply bg-blue-600 text-white;
+}
+
+.dataTables_paginate a.current {
+    @apply bg-gray-900 text-white;
+}

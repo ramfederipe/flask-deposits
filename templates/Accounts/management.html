@@ -1,0 +1,457 @@
+{% extends "base.html" %}
+
+{% block title %}Management - SDP{% endblock %}
+
+{% block content %}
+<h2>Management - SDP</h2>
+
+<div style="margin-bottom:10px;">
+    <input type="text" id="search-input" placeholder="Multi Search..." style="width:200px;">
+    <button type="button" id="add-row-management">+ Add Row</button>
+    <button type="button" id="multi-edit-btn">✏️ Multi Edit Selected</button>
+    <button type="button" id="clear-data-management">🗑️ Clear Data</button>
+    <input type="file" id="import-management-file" accept=".xlsx,.xls">
+    <button type="button" id="import-management-btn">📥 Import Excel</button>
+    <button type="button" id="export-template-btn">📤 Export Template</button>
+    <button id="remove-duplicates">Remove Duplicate Shops</button>
+    <button type="button" id="save-management-btn">💾 Save All</button>
+</div>
+
+<div id="multi-edit-container" style="display:none; margin-bottom:10px; padding:10px; border:1px solid #ccc;">
+    <strong>Multi Edit Selected Rows:</strong><br><br>
+    SDP: <input type="text" id="multi-sdp" placeholder="Leave empty to skip">
+Group Code: <input type="text" id="multi-group-code" placeholder="Leave empty to skip">
+Chat ID: <input type="text" id="multi-chat-id" placeholder="Leave empty to skip">
+TG Link: <input type="text" id="multi-tg-link" placeholder="Leave empty to skip">
+Shop: <input type="text" id="multi-shop" placeholder="Leave empty to skip">
+Remarks: <input type="text" id="multi-remarks" placeholder="Leave empty to skip">
+
+    <button type="button" id="multi-save-btn">💾 Save</button>
+    <button type="button" id="multi-cancel-btn">❌ Cancel</button>
+    <button type="button" id="bulk-edit-filtered-btn">⚡ Bulk Edit Filtered</button>
+
+</div>
+
+
+<table id="management-table" border="1" cellpadding="5" style="width:100%;">
+    <thead>
+<tr>
+    <th><input type="checkbox" id="select-all"></th>
+    <th data-column="number">NUMBER</th>
+    <th data-column="shop">SHOP<br><input type="text" class="col-filter" data-col="2"></th>
+    <th data-column="sdp">SDP<br><input type="text" class="col-filter" data-col="3"></th>
+    <th data-column="group_code">GROUP CODE<br><input type="text" class="col-filter" data-col="4"></th>
+    <th data-column="chat_id">CHAT ID (Telegram)<br><input type="text" class="col-filter" data-col="5"></th>
+    <th data-column="tg_link">TG LINK<br><input type="text" class="col-filter" data-col="6"></th>
+    <th data-column="remarks">REMARKS<br><input type="text" class="col-filter" data-col="7"></th>
+    <th>ACTIONS</th>
+</tr>
+</thead>
+
+
+
+    <tbody>
+    {% for sdp in sdps %}
+        <tr>
+            <td><input type="checkbox" class="row-checkbox"></td>
+            <td>{{ loop.index }}</td>
+            <td contenteditable="true">{{ sdp.shop }}</td>
+            <td contenteditable="true">{{ sdp.sdp }}</td>
+            <td contenteditable="true">{{ sdp.group_code or '' }}</td>
+            <td contenteditable="true">{{ sdp.chat_id or '' }}</td>
+            <td contenteditable="true">{{ sdp.tg_link or '' }}</td>
+            <td contenteditable="true">{{ sdp.remarks or '' }}</td>
+            <td>
+                <button class="save-row-btn">💾 Save</button>
+                <button class="delete-row-btn">❌ Delete</button>
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+<div id="pagination" style="margin-top:10px;">
+    <button id="prev-page">« Prev</button>
+    <span id="page-info">Page 1 of 1</span>
+    <button id="next-page">Next »</button>
+</div>
+
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+<script>
+const table = document.getElementById('management-table');
+const tbody = table.querySelector('tbody');
+const searchInput = document.getElementById('search-input');
+let currentPage = 1;
+const rowsPerPage = 100;
+
+// --- Initialize dataset.filtered ---
+tbody.querySelectorAll('tr').forEach(row => row.dataset.filtered = '1');
+
+// --- Search Filter ---
+searchInput.addEventListener('input', () => {
+    const filter = searchInput.value.toLowerCase();
+    tbody.querySelectorAll('tr').forEach(row => {
+        const rowText = Array.from(row.cells)
+            .slice(2, 8) // only data columns (skip checkbox + number + actions)
+            .map(cell => cell.textContent.toLowerCase())
+            .join(" ");
+        row.dataset.filtered = rowText.includes(filter) ? '1' : '0';
+    });
+    currentPage = 1;
+    displayPage(currentPage);
+});
+
+
+// --- Pagination Function ---
+function displayPage(page) {
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+    const filteredRows = rows.filter(row => row.dataset.filtered === '1');
+    const totalPages = Math.ceil(filteredRows.length / rowsPerPage) || 1;
+    currentPage = Math.min(Math.max(page, 1), totalPages);
+
+    rows.forEach(row => row.style.display = 'none');
+    filteredRows.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage)
+                .forEach(row => row.style.display = '');
+
+    document.getElementById('page-info').textContent = `Page ${currentPage} of ${totalPages}`;
+}
+
+// --- Pagination Buttons ---
+document.getElementById('prev-page').addEventListener('click', () => displayPage(currentPage - 1));
+document.getElementById('next-page').addEventListener('click', () => displayPage(currentPage + 1));
+
+// --- Update Pagination ---
+function updatePagination() {
+    displayPage(currentPage);
+}
+
+// --- Update Row Numbers ---
+function updateNumbers() {
+    let visibleRows = Array.from(tbody.querySelectorAll('tr')).filter(r => r.style.display !== 'none');
+    visibleRows.forEach((row, idx) => row.cells[1].textContent = (currentPage - 1) * rowsPerPage + idx + 1);
+}
+
+// --- Add Row ---
+document.getElementById('add-row-management').addEventListener('click', () => {
+    const newRow = document.createElement('tr');
+    newRow.dataset.filtered = '1';
+    newRow.innerHTML = `
+        <td><input type="checkbox" class="row-checkbox"></td>
+        <td></td>
+        <td contenteditable="true"></td>
+        <td contenteditable="true"></td>
+        <td contenteditable="true"></td>
+        <td contenteditable="true"></td>
+        <td contenteditable="true"></td>
+        <td contenteditable="true"></td>
+        <td>
+            <button class="save-row-btn">💾 Save</button>
+            <button class="delete-row-btn">❌ Delete</button>
+        </td>`;
+    tbody.appendChild(newRow);
+    updatePagination();
+    updateNumbers();
+});
+
+// --- Delete Row ---
+tbody.addEventListener('click', e => {
+    if (e.target.classList.contains('delete-row-btn')) {
+        e.target.closest('tr').remove();
+        updatePagination();
+        updateNumbers();
+    }
+});
+
+// --- Save Row ---
+tbody.addEventListener('click', e => {
+    if (e.target.classList.contains('save-row-btn')) {
+        const row = e.target.closest('tr');
+        saveRows([row]);
+    }
+});
+
+// --- Save All ---
+document.getElementById('save-management-btn').addEventListener('click', () => {
+    saveRows(Array.from(tbody.querySelectorAll('tr')));
+});
+
+// --- Save Function ---
+function saveRows(rows) {
+    const data = rows.map(row => ({
+        shop: row.cells[2].textContent.trim(),
+        sdp: parseFloat(row.cells[3].textContent.trim()) || 0,
+        group_code: row.cells[4].textContent.trim(),
+        chat_id: row.cells[5].textContent.trim(),
+        tg_link: row.cells[6].textContent.trim(),
+        remarks: row.cells[7].textContent.trim()
+    }));
+
+    fetch('/accounts/save_sdps', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sdps: data })
+    })
+    .then(res => res.json())
+    .then(res => {
+        alert(res.message || "Saved successfully!");
+        location.reload();
+    })
+    .catch(err => alert("Error saving data: " + err));
+}
+
+// --- Select All ---
+document.getElementById('select-all').addEventListener('change', e => {
+    const checked = e.target.checked;
+    tbody.querySelectorAll('tr').forEach(row => {
+        if (row.dataset.filtered === '1' && row.style.display !== 'none') {
+            row.querySelector('.row-checkbox').checked = checked;
+        }
+    });
+});
+
+
+// --- Multi-Edit ---
+const multiEditBtn = document.getElementById('multi-edit-btn');
+const multiContainer = document.getElementById('multi-edit-container');
+const multiSaveBtn = document.getElementById('multi-save-btn');
+const multiCancelBtn = document.getElementById('multi-cancel-btn');
+
+multiEditBtn.addEventListener('click', () => {
+    const selectedRows = Array.from(tbody.querySelectorAll('.row-checkbox:checked')).map(cb => cb.closest('tr'));
+    if (!selectedRows.length) return alert("Select at least one row for multi-edit");
+    multiContainer.selectedRows = selectedRows;
+    multiContainer.style.display = 'block';
+});
+
+multiCancelBtn.addEventListener('click', () => {
+    multiContainer.style.display = 'none';
+    ['multi-sdp','multi-group-code','multi-chat-id','multi-tg-link'].forEach(id => document.getElementById(id).value = '');
+});
+
+multiSaveBtn.addEventListener('click', () => {
+    const sdpVal = document.getElementById('multi-sdp').value.trim();
+    const groupVal = document.getElementById('multi-group-code').value.trim();
+    const chatVal = document.getElementById('multi-chat-id').value.trim();
+    const tgVal = document.getElementById('multi-tg-link').value.trim();
+    const shopVal = document.getElementById('multi-shop').value.trim();
+    const remarksVal = document.getElementById('multi-remarks').value.trim();
+
+    multiContainer.selectedRows.forEach(row => {
+        if (sdpVal) row.cells[3].textContent = sdpVal;
+        if (groupVal) row.cells[4].textContent = groupVal;
+        if (chatVal) row.cells[5].textContent = chatVal;
+        if (tgVal) row.cells[6].textContent = tgVal;
+        if (shopVal) row.cells[2].textContent = shopVal;
+        if (remarksVal) row.cells[7].textContent = remarksVal;
+    });
+
+    saveRows(multiContainer.selectedRows);
+    multiCancelBtn.click();
+});
+
+
+// --- Sorting ---
+let sortColumn = null, sortAsc = true;
+function clearSortIndicators() {
+    table.querySelectorAll('th[data-column]').forEach(th => th.textContent = th.textContent.replace(/ ▲| ▼/, ''));
+}
+
+table.querySelectorAll('th[data-column]').forEach(th => {
+    th.style.cursor = 'pointer';
+    th.addEventListener('click', () => {
+        const columnIndex = Array.from(th.parentNode.children).indexOf(th);
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+        const isNumber = th.dataset.column === 'sdp' || th.dataset.column === 'number';
+
+        rows.sort((a,b) => {
+            if(a.dataset.filtered === '0' && b.dataset.filtered === '0') return 0;
+            let aVal = a.cells[columnIndex].textContent.trim();
+            let bVal = b.cells[columnIndex].textContent.trim();
+            if(isNumber){ aVal = parseFloat(aVal)||0; bVal=parseFloat(bVal)||0;}
+            if(aVal<bVal) return sortAsc?-1:1;
+            if(aVal>bVal) return sortAsc?1:-1;
+            return 0;
+        });
+
+        rows.forEach(r => tbody.appendChild(r));
+        clearSortIndicators();
+        th.textContent += sortAsc?' ▲':' ▼';
+        sortColumn = columnIndex;
+        sortAsc = (sortColumn === columnIndex) ? !sortAsc : true;
+
+        updatePagination();
+        updateNumbers();
+    });
+});
+
+// --- Initial render ---
+updatePagination();
+updateNumbers();
+
+document.getElementById('clear-data-management').addEventListener('click', () => {
+    if (!confirm("Are you sure you want to clear all rows?")) return;
+
+    // Remove all rows from table
+    tbody.querySelectorAll('tr').forEach(row => row.remove());
+
+    // Reset pagination and numbering
+    currentPage = 1;
+    updateNumbers();
+    updatePagination();
+
+    // Send empty data to backend
+    fetch('/accounts/save_sdps', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sdps: [] })  // important: empty array
+    })
+    .then(res => res.json())
+    .then(res => alert(res.message || "All data cleared successfully!"))
+    .catch(err => alert("Error clearing data: " + err));
+});
+
+// --- Import Excel ---
+document.getElementById('import-management-btn').addEventListener('click', () => {
+    const fileInput = document.getElementById('import-management-file');
+    if (!fileInput.files.length) return alert("Please select a file first");
+
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+
+    reader.onload = function(e) {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const json = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+
+        // Clear current table
+        tbody.innerHTML = "";
+
+        // Populate table
+        json.forEach((row, index) => {
+            const tr = document.createElement('tr');
+            tr.dataset.filtered = '1';
+            tr.innerHTML = `
+                <td><input type="checkbox" class="row-checkbox"></td>
+                <td>${index + 1}</td>
+                <td contenteditable="true">${row.shop || ''}</td>
+                <td contenteditable="true">${row.sdp || ''}</td>
+                <td contenteditable="true">${row.group_code || ''}</td>
+                <td contenteditable="true">${row.chat_id || ''}</td>
+                <td contenteditable="true">${row.tg_link || ''}</td>
+                <td contenteditable="true">${row.remarks || ''}</td>
+                <td>
+                    <button class="save-row-btn">💾 Save</button>
+                    <button class="delete-row-btn">❌ Delete</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        // Reset pagination after import
+        currentPage = 1;
+        displayPage(currentPage);
+    };
+
+    reader.readAsArrayBuffer(file);
+});
+
+
+</script>
+
+<script>
+$(window).on('scroll', function() {
+    if ($(window).scrollTop() > 50) { // adjust threshold
+        $('.accounts-nav').addClass('scrolled');
+    } else {
+        $('.accounts-nav').removeClass('scrolled');
+    }
+});
+</script>
+
+<script>
+// --- Export Template ---
+document.getElementById('export-template-btn').addEventListener('click', () => {
+    // Define headers for the template
+    const headers = [
+        ["shop", "sdp", "group_code", "chat_id", "tg_link", "remarks"]
+    ];
+
+    // Optionally add a sample row (can be left empty if you want just headers)
+    const data = [
+        { shop: "", sdp: "", group_code: "", chat_id: "", tg_link: "", remarks: "" }
+    ];
+
+    // Create worksheet from headers + data
+    const ws = XLSX.utils.json_to_sheet(data, { header: headers[0], skipHeader: true });
+    XLSX.utils.sheet_add_aoa(ws, headers, { origin: "A1" });
+
+    // Create workbook
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Template");
+
+    // Export file
+    XLSX.writeFile(wb, "management_template.xlsx");
+});
+
+// --- Column Filters ---
+document.querySelectorAll('.col-filter').forEach(input => {
+    input.addEventListener('input', () => {
+        applyFilters();
+    });
+});
+
+function applyFilters() {
+    const filters = {};
+    document.querySelectorAll('.col-filter').forEach(input => {
+        const col = input.dataset.col;
+        filters[col] = input.value.toLowerCase();
+    });
+
+    tbody.querySelectorAll('tr').forEach(row => {
+        let match = true;
+        for (const col in filters) {
+            const val = row.cells[col].textContent.toLowerCase();
+            if (filters[col] && !val.includes(filters[col])) {
+                match = false;
+                break;
+            }
+        }
+        row.dataset.filtered = match ? '1' : '0';
+    });
+
+    currentPage = 1;
+    displayPage(currentPage);
+}
+
+const bulkEditBtn = document.getElementById('bulk-edit-filtered-btn');
+
+bulkEditBtn.addEventListener('click', () => {
+    const filteredRows = Array.from(tbody.querySelectorAll('tr')).filter(r => r.dataset.filtered === '1');
+    if (!filteredRows.length) return alert("No filtered rows to bulk edit");
+
+    multiContainer.selectedRows = filteredRows;
+    multiContainer.style.display = 'block';
+});
+
+document.getElementById("remove-duplicates").addEventListener("click", () => {
+    const seen = new Set();
+    const rows = Array.from(tbody.querySelectorAll("tr"));
+
+    rows.forEach(row => {
+        const shop = row.cells[2].innerText.trim(); // column index 2 = SHOP
+
+        if (seen.has(shop) && shop !== "") {
+            row.remove(); // remove duplicate shop row
+        } else {
+            seen.add(shop);
+        }
+    });
+
+    alert("Duplicate shops removed!");
+});
+
+</script>
+
+{% endblock %}

@@ -1,0 +1,168 @@
+
+{% block extra_css %}
+<style>
+/* Main Layout */
+body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background: linear-gradient(135deg, #1e3a8a, #2563eb);
+  color: #fff;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Hero Section */
+.hero {
+  text-align: center;
+  margin-bottom: 50px;
+}
+
+.hero h1 {
+  font-size: 3.5rem;
+  margin-bottom: 15px;
+  background: linear-gradient(270deg, #ff6a00, #f7df1e, #0ea5e9, #ff6a00);
+  background-size: 800% 800%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gradientMove 10s ease infinite;
+}
+
+.hero p {
+  font-size: 1.3rem;
+  color: #e0e7ff;
+}
+
+/* Floating Cards Section */
+.cards {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 25px;
+  position: relative;
+}
+
+/* Neon streak effect behind cards */
+.cards::before {
+  content: '';
+  position: absolute;
+  top: -50px;
+  left: -50px;
+  width: 300%;
+  height: 300%;
+  background: radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 70%);
+  animation: neonMove 15s linear infinite;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.card {
+  position: relative; /* for streak to be behind */
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 15px;
+  padding: 30px 25px;
+  width: 220px;
+  height: 180px;
+  text-align: center;
+  transition: transform 0.4s ease, box-shadow 0.4s ease;
+  cursor: pointer;
+  animation: pulse 2.5s infinite;
+  z-index: 1;
+}
+
+.card:hover {
+  transform: translateY(-10px) scale(1.05);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.25);
+}
+
+.card i {
+  font-size: 2.5rem;
+  margin-bottom: 15px;
+  display: block;
+  animation: iconGlow 3s infinite alternate;
+}
+
+.card p {
+  font-size: 1.1rem;
+  margin: 0;
+  font-weight: 600;
+}
+
+/* Animations */
+@keyframes gradientMove {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 15px rgba(255,255,255,0.1); }
+  50% { box-shadow: 0 0 25px rgba(255,255,255,0.2); }
+  100% { box-shadow: 0 0 15px rgba(255,255,255,0.1); }
+}
+
+@keyframes iconGlow {
+  0% { color: #ff6a00; text-shadow: 0 0 5px #ff6a00; }
+  50% { color: #f7df1e; text-shadow: 0 0 15px #f7df1e; }
+  100% { color: #0ea5e9; text-shadow: 0 0 10px #0ea5e9; }
+}
+
+/* Neon streak movement */
+@keyframes neonMove {
+  0% { transform: rotate(0deg) translate(0,0); }
+  50% { transform: rotate(180deg) translate(50px,50px); }
+  100% { transform: rotate(360deg) translate(0,0); }
+}
+
+/* Responsive */
+@media(max-width: 768px) {
+  .cards {
+    flex-direction: column;
+    align-items: center;
+  }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="hero">
+  <h1>📊 Managing Portal</h1>
+  <p>Welcome! Access all modules from here.</p>
+</div>
+
+<div class="cards">
+  <a href="{{ url_for('notebook') }}">
+    <div class="card">
+      <i>📓</i>
+      <p>Notebook</p>
+    </div>
+  </a>
+  <a href="{{ url_for('deposit') }}">
+    <div class="card">
+      <i>📥</i>
+      <p>Deposit Management</p>
+    </div>
+  </a>
+  <a href="{{ url_for('withdrawal') }}">
+    <div class="card">
+      <i>📤</i>
+      <p>Withdrawal Management</p>
+    </div>
+  </a>
+  <a href="{{ url_for('wallet') }}">
+    <div class="card">
+      <i>💼</i>
+      <p>Wallets</p>
+    </div>
+  </a>
+  <a href="{{ url_for('accounts') }}">
+    <div class="card">
+      <i>👥</i>
+      <p>Agents</p>
+    </div>
+  </a>
+</div>
+{% endblock %}

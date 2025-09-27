@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Deposit{% endblock %}
+
+
+{% block extra_css %}
+
+<nav class="accounts-nav">
+    <a href="{{ url_for('accounts_management') }}" class="{% if active_page=='accounts_management' %}active{% endif %}">Accounts Management</a>
+    <a href="{{ url_for('monitoring') }}" class="{% if active_page=='monitoring' %}active{% endif %}">Monitoring</a>
+    <a href="{{ url_for('overview') }}" class="{% if active_page=='overview' %}active{% endif %}">Overview</a>
+    <a href="{{ url_for('wallet_limit') }}" class="{% if active_page=='wallet_limit' %}active{% endif %}">Wallet/Limit</a>
+    <a href="{{ url_for('inactive') }}" class="{% if active_page=='inactive' %}active{% endif %}">Inactive</a>
+</nav>
+
+<link rel="stylesheet" href="{{ url_for('static', filename='css/transactions.css') }}">
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="transactions-container">
+
+    <!-- Include the reusable accounts header -->
+    {% include "accounts_header.html" %}
+
+    <!-- Deposit page content -->
+    <div class="transactions-header">
+        <h2>Deposit</h2>
+        <div class="header-buttons">
+            <form id="deposit-form" method="POST" enctype="multipart/form-data">
+                <input type="file" name="excel_file" required>
+                <button type="submit" class="button button-primary">Upload</button>
+            </form>
+            <form action="{{ url_for('cleanup_deposits') }}" method="post" onsubmit="return confirm('Are you sure?');">
+                <button type="submit" class="button button-danger">Remove Non-Successful</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Filters & Table here ... -->
+</div>
+{% endblock %}

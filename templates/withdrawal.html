@@ -1,31 +1,149 @@
 {% extends "base.html" %}
 
-{% block title %}Withdrawal Upload{% endblock %}
+{% block title %}Withdrawal{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/transactions.css') }}">
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+{% endblock %}
 
 {% block content %}
-<div class="card">
-    <h2>Withdrawal Upload</h2>
-    <form method="POST" action="{{ url_for('withdrawal') }}" enctype="multipart/form-data">
-    <input type="file" name="excel_file" accept=".xlsx,.xls">
-    <button type="submit">Upload</button>
-</form>
+<div class="transactions-container">
+
+    <!-- Flash Messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="flash-messages">
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">{{ message }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
 
 
+    <!-- Page Header -->
+    <div class="transactions-header">
+        <h2>Withdrawal</h2>
+        <div class="header-buttons">
+            <form id="withdrawal-form" method="POST" action="{{ url_for('withdrawal') }}" enctype="multipart/form-data">
+                <input type="file" name="excel_file" required>
+                <button type="submit" class="button button-primary">Upload</button>
+            </form>
+            <form action="{{ url_for('cleanup_withdrawals') }}" method="post" onsubmit="return confirm('Are you sure?');">
+                <button type="submit" class="button button-danger">Remove Non-Successful</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="transactions-filters">
+        <form method="get" action="{{ url_for('withdrawal') }}">
+            <label>Start Date:</label>
+            <input type="date" name="start_date" value="{{ request.args.get('start_date', '') }}">
+            <label>End Date:</label>
+            <input type="date" name="end_date" value="{{ request.args.get('end_date', '') }}">
+
+            <label>Merchant Code:</label>
+            <select name="merchant_code">
+                <option value="">All</option>
+                {% for code in merchant_codes %}
+                    <option value="{{ code }}" {% if code==selected_merchant %}selected{% endif %}>{{ code }}</option>
+                {% endfor %}
+            </select>
+
+            <label>Bank:</label>
+            <select name="bank">
+                <option value="">All</option>
+                {% for b in banks %}
+                    <option value="{{ b }}" {% if b==selected_bank %}selected{% endif %}>{{ b }}</option>
+                {% endfor %}
+            </select>
+
+            <label>Status:</label>
+            <select name="status">
+                <option value="">All</option>
+                {% for s in statuses %}
+                    <option value="{{ s }}" {% if s==selected_status %}selected{% endif %}>{{ s }}</option>
+                {% endfor %}
+            </select>
+
+            <button type="submit" class="button button-primary">Filter</button>
+            <a href="{{ url_for('withdrawal') }}" class="button button-secondary">Clear</a>
+        </form>
+    </div>
+
+    {% if settings.enable_delete %}
+<div class="mb-3">
+    <form method="POST" action="{{ url_for('delete_withdrawals') }}">
+        <button type="submit" name="delete_type" value="all" class="btn btn-danger">
+            Delete All Withdrawals
+        </button>
+
+        <!-- Hidden fields to carry over the filter dates -->
+        <input type="hidden" name="start_date" value="{{ request.args.get('start_date', '') }}">
+        <input type="hidden" name="end_date" value="{{ request.args.get('end_date', '') }}">
+
+        <button type="submit" name="delete_type" value="filter" class="btn btn-warning">
+            Delete Withdrawals by Date Filter
+        </button>
+    </form>
+</div>
+{% endif %}
+
+
+
+
+
+
+
+    <!-- Table -->
     {% if table_html %}
-        <div style="margin-top:20px;">
+        <div class="transactions-table-card">
             {{ table_html|safe }}
-            <p><small>Color coding: Green = High, Yellow = Medium, Red = Low balance</small></p>
+            <p><small>Color coding: Green = High, Yellow = Medium, Red = Low</small></p>
         </div>
     {% endif %}
+
+    <!-- Pagination -->
+    {% import 'macros.html' as macros %}
+{{ macros.render_pagination(page, total_pages, args={
+    'start_date': request.args.get('start_date'),
+    'end_date': request.args.get('end_date'),
+    'merchant_code': request.args.get('merchant_code'),
+    'bank': request.args.get('bank'),
+    'status': request.args.get('status')
+}) }}
+
 </div>
 {% endblock %}
 
-{% block extra_css %}
-<style>
-    .excel-table th { background-color: #1e293b; color: #fff; padding: 12px; }
-    .excel-table td { padding: 10px; }
-    .excel-table tr.low { background-color: #fee2e2; }
-    .excel-table tr.medium { background-color: #fef3c7; }
-    .excel-table tr.high { background-color: #dcfce7; }
-</style>
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+
+<script>
+$(document).ready(function(){
+    $('#withdrawalTable').DataTable({
+        dom: 'Bfrtip',
+        buttons: ['csv', 'excel'],
+        pageLength: 25,
+        order: [[0,'desc']]
+    });
+});
+
+// Default dates to today
+document.addEventListener("DOMContentLoaded", function() {
+    const now = new Date();
+    const today = now.toISOString().split('T')[0];
+    const startInput = document.querySelector("input[name='start_date']");
+    const endInput = document.querySelector("input[name='end_date']");
+    if(!startInput.value) startInput.value = today;
+    if(!endInput.value) endInput.value = today;
+});
+</script>
 {% endblock %}

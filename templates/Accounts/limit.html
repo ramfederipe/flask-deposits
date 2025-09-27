@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto mt-6">
+
+    <!-- Include accounts header and wallet/limit header -->
+    {% include "accounts/wallet_limit_header.html" %}
+
+    <!-- Upload Limit Form -->
+    <div class="card mb-6 p-6 bg-white shadow-md rounded-lg">
+        <h2 class="text-xl font-semibold mb-4">Upload Limit Data</h2>
+        <form method="POST" enctype="multipart/form-data" class="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+            <input type="file" name="excel_file" class="border rounded px-3 py-2 w-full sm:w-80">
+            <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">Upload</button>
+        </form>
+    </div>
+
+    <!-- Limit Table -->
+    <div class="card bg-white shadow-md rounded-lg p-4 overflow-x-auto">
+        <table id="limitTable" class="min-w-full border border-gray-200 table-auto">
+            <thead class="bg-gray-800 text-white">
+                <tr>
+                    <th class="px-4 py-2">Bank</th>
+                    <th class="px-4 py-2">Channel</th>
+                    <th class="px-4 py-2">Group</th>
+                    <th class="px-4 py-2">Account</th>
+                    <th class="px-4 py-2">Agent Number</th>
+                    <th class="px-4 py-2">Shop Name</th>
+                    <th class="px-4 py-2">Balance</th>
+                    <th class="px-4 py-2">Balance Limit</th>
+                    <th class="px-4 py-2">DP Limit</th>
+                    <th class="px-4 py-2">Total DP</th>
+                    <th class="px-4 py-2">WD Limit</th>
+                    <th class="px-4 py-2">Total WD</th>
+                    <th class="px-4 py-2">Update Time</th>
+                    <th class="px-4 py-2">Login</th>
+                    <th class="px-4 py-2">Status</th>
+                    <th class="px-4 py-2">Timestamp</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for limit in limit_data %}
+                <tr class="hover:bg-gray-100 border-b">
+                    <td class="px-4 py-2">{{ limit.bank }}</td>
+                    <td class="px-4 py-2">{{ limit.channel }}</td>
+                    <td class="px-4 py-2">{{ limit.group }}</td>
+                    <td class="px-4 py-2">{{ limit.account }}</td>
+                    <td class="px-4 py-2">{{ limit.agent_number }}</td>
+                    <td class="px-4 py-2">{{ limit.shop_name }}</td>
+                    <td class="px-4 py-2">{{ limit.balance }}</td>
+                    <td class="px-4 py-2">{{ limit.balance_limit }}</td>
+                    <td class="px-4 py-2">{{ limit.dp_limit }}</td>
+                    <td class="px-4 py-2">{{ limit.total_dp }}</td>
+                    <td class="px-4 py-2">{{ limit.wd_limit }}</td>
+                    <td class="px-4 py-2">{{ limit.total_wd }}</td>
+                    <td class="px-4 py-2">{{ limit.update_time }}</td>
+                    <td class="px-4 py-2">{{ limit.login }}</td>
+                    <td class="px-4 py-2">{{ limit.status }}</td>
+                    <td class="px-4 py-2">{{ limit.timestamp }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+<!-- DataTables JS -->
+<script>
+$(document).ready(function() {
+    $('#limitTable').DataTable({
+        pageLength: 25,
+        lengthMenu: [10, 25, 50, 100],
+        ordering: true,
+        order: [[0, 'asc']],
+        searching: true,
+        scrollX: true,
+        dom: 'Bfrtip',
+        buttons: ['csv', 'excel'],
+        responsive: true
+    });
+});
+</script>
+{% endblock %}

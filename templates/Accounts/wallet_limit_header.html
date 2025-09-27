@@ -1,0 +1,9 @@
+
+<div class="mb-3 d-flex gap-2">
+    <a href="{{ url_for('limit') }}" class="modern-btn {% if active_tab == 'limit' %}btn-primary{% endif %}">
+        Limits
+    </a>
+    <a href="{{ url_for('wallet') }}" class="modern-btn {% if active_tab == 'wallet' %}btn-primary{% endif %}">
+        Wallets
+    </a>
+</div>

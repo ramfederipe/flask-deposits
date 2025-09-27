@@ -1,0 +1,23 @@
+<nav class="navbar navbar-expand-lg navbar-light bg-light mb-3">
+  <div class="container-fluid">
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#adjNavbar" aria-controls="adjNavbar" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="adjNavbar">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint == 'dashboard_new' %}active{% endif %}" href="{{ url_for('dashboard_new') }}">Dashboard</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint == 'topups' %}active{% endif %}" href="{{ url_for('topups') }}">TopUps</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint == 'settlements' %}active{% endif %}" href="{{ url_for('settlements') }}">Settlements</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if request.endpoint == 'adjustments' %}active{% endif %}" href="{{ url_for('adjustments') }}">Adjustments</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>

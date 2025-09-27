@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Google Sheet Data{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2>Google Sheet Data (MANAGING1)</h2>
+  <a href="{{ url_for('monitoring') }}" class="btn btn-outline-secondary">← Back to Monitoring</a>
+</div>
+
+<div class="table-responsive">
+  <table id="gsheetTable" class="table table-striped table-bordered table-hover align-middle">
+    <thead class="table-dark">
+      <!-- Filter row ABOVE headers -->
+      <tr class="filters">
+        <th></th>
+        <th></th>
+        <th></th>
+        <th></th>
+        <th></th>
+        <th></th>
+        <th></th>
+        <th></th> <!-- GROUP CODE -->
+        <th></th> <!-- STATUS -->
+        <th></th>
+        <th></th>
+        <th></th>
+        <th></th>
+        <th></th> <!-- WALLET -->
+        <th></th>
+      </tr>
+      <!-- Column headers -->
+      <tr>
+        <th>SDP</th>
+        <th>ACCOUNTS</th>
+        <th>OPENING</th>
+        <th>DP</th>
+        <th>WD</th>
+        <th>ADJUSTMENT</th>
+        <th>BALANCE</th>
+        <th>GROUP CODE</th>
+        <th>STATUS</th>
+        <th>AVAILABLE LIMIT</th>
+        <th>SYSTEM BALANCE</th>
+        <th>TG LINKS</th>
+        <th>CHAT ID</th>
+        <th>WALLET</th>
+        <th>REMARKS</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in rows %}
+      <tr>
+        <td>{{ r.get('SDP','') }}</td>
+        <td>{{ r.get('ACCOUNTS','') }}</td>
+        <td>{{ r.get('OPENING','') }}</td>
+        <td>{{ r.get('DP','') }}</td>
+        <td>{{ r.get('WD','') }}</td>
+        <td>{{ r.get('ADJUSTMENT','') }}</td>
+        <td><strong>{{ r.get('BALANCE','') }}</strong></td>
+        <td>{{ r.get('GROUP CODE','') }}</td>
+        <td>{{ r.get('STATUS','') }}</td>
+        <td>{{ r.get('AVAILABLE LIMIT','') }}</td>
+        <td>{{ r.get('SYSTEM BALANCE','') }}</td>
+        <td>
+          {% set link = r.get('TG LINKS','') %}
+          {% if link %}
+            <a href="{{ link }}" target="_blank" rel="noopener">Open</a>
+          {% endif %}
+        </td>
+        <td>{{ r.get('CHAT ID','') }}</td>
+        <td>{{ r.get('WALLET','') }}</td>
+        <td>{{ r.get('REMARKS','') }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
+<script>
+$(document).ready(function() {
+  var table = $('#gsheetTable').DataTable({
+    pageLength: 50,
+    lengthChange: false,
+    order: []
+  });
+
+  // Create dropdown filters in the filter row (top row)
+  table.columns([7, 8, 13]).every(function () {
+    var column = this;
+    var select = $('<select class="form-select form-select-sm"><option value="">All</option></select>')
+      .appendTo($(column.header()).closest('thead').find('.filters th').eq(column.index()).empty())
+      .on('change', function () {
+        var val = $.fn.dataTable.util.escapeRegex($(this).val());
+        column.search(val ? '^' + val + '$' : '', true, false).draw();
+      });
+
+    column.data().unique().sort().each(function (d) {
+      if (d) select.append('<option value="' + d + '">' + d + '</option>');
+    });
+  });
+});
+</script>
+{% endblock %}

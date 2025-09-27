@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto mt-6">
+
+
+    {% include "accounts/wallet_limit_header.html" %}
+
+    <!-- Upload Wallet Form -->
+    <div class="card mb-6 p-6 bg-white shadow-md rounded-lg">
+        <h2 class="text-xl font-semibold mb-4">Upload Wallet Data</h2>
+        <form method="POST" enctype="multipart/form-data" class="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+            <input type="file" name="excel_file" class="border rounded px-3 py-2 w-full sm:w-80">
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">Upload</button>
+        </form>
+    </div>
+
+    <!-- Wallet Table -->
+    <div class="card bg-white shadow-md rounded-lg p-4 overflow-x-auto">
+        <table id="walletTable" class="min-w-full border border-gray-200 table-auto">
+            <thead class="bg-gray-800 text-white">
+                <tr>
+                    <th class="px-4 py-2">Currency Name</th>
+                    <th class="px-4 py-2">Deposit Channels</th>
+                    <th class="px-4 py-2">Merchant Code</th>
+                    <th class="px-4 py-2">Group Code</th>
+                    <th class="px-4 py-2">Bank Code</th>
+                    <th class="px-4 py-2">Short Name</th>
+                    <th class="px-4 py-2">Account Number</th>
+                    <th class="px-4 py-2">Phone</th>
+                    <th class="px-4 py-2">Status</th>
+                    <th class="px-4 py-2">Timestamp</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for wallet in wallet_data %}
+                <tr class="hover:bg-gray-100 border-b">
+                    <td class="px-4 py-2">{{ wallet.currency_name }}</td>
+                    <td class="px-4 py-2">{{ wallet.deposit_channels }}</td>
+                    <td class="px-4 py-2">{{ wallet.merchant_code }}</td>
+                    <td class="px-4 py-2">{{ wallet.group_code }}</td>
+                    <td class="px-4 py-2">{{ wallet.bank_code }}</td>
+                    <td class="px-4 py-2">{{ wallet.short_name }}</td>
+                    <td class="px-4 py-2">{{ wallet.account_number }}</td>
+                    <td class="px-4 py-2">{{ wallet.phone }}</td>
+                    <td class="px-4 py-2">{{ wallet.status }}</td>
+                    <td class="px-4 py-2">{{ wallet.timestamp }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+<!-- DataTables JS -->
+<script>
+$(document).ready(function() {
+    $('#walletTable').DataTable({
+        pageLength: 25,
+        lengthMenu: [10, 25, 50, 100],
+        ordering: true,
+        order: [[0, 'asc']],
+        searching: true,
+        scrollX: true,
+        dom: 'Bfrtip',
+        buttons: ['csv', 'excel'],
+        responsive: true
+    });
+});
+</script>
+{% endblock %}

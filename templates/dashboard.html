@@ -1,54 +1,232 @@
 {% extends "base.html" %}
 
-{% block title %}Deposit Upload{% endblock %}
+{% block title %}Dashboard{% endblock %}
 
 {% block content %}
-<h2>Deposit Upload</h2>
-<form method="POST" action="{{ url_for('deposit') }}" enctype="multipart/form-data">
-    <input type="file" name="excel_file" accept=".xlsx,.xls">
-    <button type="submit">Upload</button>
-</form>
+<div class="container mt-4">
+    <!-- Header Buttons -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Dashboard</h2>
+        <div>
+            <button id="toggle-sidebar-btn" class="btn btn-primary btn-sm me-2">Toggle Sidebar</button>
+            <button id="export-btn" class="btn btn-success btn-sm">Export Dashboard as Image</button>
+        </div>
+    </div>
 
-{% if deposits %}
-    <h1>Deposit Table</h1>
-    <table class="excel-table" border="1" cellpadding="5" cellspacing="0">
+    <!-- Month Filter -->
+    <form method="get" class="mb-4 d-flex align-items-center gap-2">
+        <label for="month">Select Month:</label>
+        <input type="month" id="month" name="month" value="{{ request.args.get('month', '') }}">
+        <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+    </form>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-success mb-3">
+                <div class="card-header">Deposits Count</div>
+                <div class="card-body">
+                    <h5 class="card-title">{{ deposit_total_count }}</h5>
+                    <p class="card-text">Total Deposits</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-success mb-3">
+                <div class="card-header">Deposits Amount</div>
+                <div class="card-body">
+                    <h5 class="card-title">{{ "%.2f"|format(deposit_total_amount) }}</h5>
+                    <p class="card-text">Total Amount</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-danger mb-3">
+                <div class="card-header">Withdrawals Count</div>
+                <div class="card-body">
+                    <h5 class="card-title">{{ withdrawal_total_count }}</h5>
+                    <p class="card-text">Total Withdrawals</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-danger mb-3">
+                <div class="card-header">Withdrawals Amount</div>
+                <div class="card-body">
+                    <h5 class="card-title">{{ "%.2f"|format(withdrawal_total_amount) }}</h5>
+                    <p class="card-text">Total Amount</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="row mb-5">
+        <div class="col-md-6">
+            <canvas id="dailyChart"></canvas>
+        </div>
+        <div class="col-md-6">
+            <canvas id="monthlyChart"></canvas>
+        </div>
+    </div>
+
+    <div class="row mb-5">
+        <div class="col-md-6">
+            <canvas id="depositBankChart"></canvas>
+        </div>
+        <div class="col-md-6">
+            <canvas id="withdrawalBankChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Tables -->
+    <h4>Deposit by Merchant</h4>
+    <table class="table table-bordered table-striped">
         <thead>
             <tr>
-                <th>Deposit Type</th>
-                <th>Merchant Code</th>
-                <th>Customer</th>
-                <th>Amount</th>
-                <th>Status</th>
-                <th>Action</th>
+                <th>Merchant</th>
+                <th>Count</th>
+                <th>Total Amount</th>
             </tr>
         </thead>
         <tbody>
-        {% for row in deposits %}
-            <tr class="{{ row.row_class }}">
-                <td>{{ row.Deposit_Type }}</td>
+            {% for row in deposit_merchant_stats %}
+            <tr>
                 <td>{{ row.merchant_code }}</td>
-                <td>{{ row.customer }}</td>
-                <td>{{ row.amount }}</td>
-                <td>{{ row.status }}</td>
-                <td>
-                    <form method="POST" action="{{ url_for('delete_deposit', deposit_id=row.id) }}">
-                        <button type="submit" class="delete-btn">Delete</button>
-                    </form>
-                </td>
+                <td>{{ row.count }}</td>
+                <td>{{ "%.2f"|format(row.total_amount) }}</td>
             </tr>
-        {% endfor %}
+            {% endfor %}
         </tbody>
     </table>
-{% endif %}
-{% endblock %}
 
-{% block extra_css %}
-<style>
-    .excel-table th { background-color: #1e293b; color: #fff; padding: 12px; }
-    .excel-table td { padding: 10px; }
-    .excel-table tr.low { background-color: #fee2e2; }
-    .excel-table tr.medium { background-color: #fef3c7; }
-    .excel-table tr.high { background-color: #dcfce7; }
-    .delete-btn { color: white; background-color: red; border: none; padding: 4px 8px; cursor: pointer; border-radius: 4px; }
-</style>
+    <h4>Deposit by Bank</h4>
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>Bank</th>
+                <th>Count</th>
+                <th>Total Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in deposit_bank_stats %}
+            <tr>
+                <td>{{ row.bank }}</td>
+                <td>{{ row.count }}</td>
+                <td>{{ "%.2f"|format(row.total_amount) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h4>Withdrawal by Merchant</h4>
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>Merchant</th>
+                <th>Count</th>
+                <th>Total Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in withdrawal_merchant_stats %}
+            <tr>
+                <td>{{ row.merchant_code }}</td>
+                <td>{{ row.count }}</td>
+                <td>{{ "%.2f"|format(row.total_amount) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h4>Withdrawal by Bank</h4>
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>Bank</th>
+                <th>Count</th>
+                <th>Total Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in withdrawal_bank_stats %}
+            <tr>
+                <td>{{ row.bank }}</td>
+                <td>{{ row.count }}</td>
+                <td>{{ "%.2f"|format(row.total_amount) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+</div>
+
+<!-- Chart JS -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<script>
+    // Toggle sidebar
+    document.getElementById('toggle-sidebar-btn').addEventListener('click', function() {
+        const sidebar = document.getElementById('sidebar');
+        const container = document.querySelector('.container');
+        sidebar.classList.toggle('collapsed');
+        container.classList.toggle('sidebar-collapsed');
+    });
+
+    // Export dashboard as image
+    document.getElementById('export-btn').addEventListener('click', function() {
+        const dashboard = document.querySelector('.container');
+        html2canvas(dashboard, { scale: 2 }).then(canvas => {
+            const link = document.createElement('a');
+            link.download = 'dashboard.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        });
+    });
+
+    // Charts
+    const dailyChartCtx = document.getElementById('dailyChart').getContext('2d');
+    const dailyChart = new Chart(dailyChartCtx, {
+        type: 'line',
+        data: {
+            labels: {{ labels|tojson }},
+            datasets: [
+                { label: 'Deposit Amount', data: {{ deposit_amount_data|tojson }}, borderColor: 'green', fill: false },
+                { label: 'Withdrawal Amount', data: {{ withdrawal_data|tojson }}, borderColor: 'red', fill: false }
+            ]
+        }
+    });
+
+    const monthlyChartCtx = document.getElementById('monthlyChart').getContext('2d');
+    const monthlyChart = new Chart(monthlyChartCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ month_labels|tojson }},
+            datasets: [
+                { label: 'Deposit Amount', data: {{ deposit_month_amounts|tojson }}, backgroundColor: 'green' },
+                { label: 'Withdrawal Amount', data: {{ withdrawal_month_amounts|tojson }}, backgroundColor: 'red' }
+            ]
+        }
+    });
+
+    const depositBankCtx = document.getElementById('depositBankChart').getContext('2d');
+    const depositBankChart = new Chart(depositBankCtx, {
+        type: 'pie',
+        data: {
+            labels: {{ chart_labels|tojson }},
+            datasets: [{ data: {{ chart_deposit_amounts|tojson }}, backgroundColor: ['#4caf50','#8bc34a','#cddc39','#ffeb3b','#ffc107','#ff9800','#ff5722'] }]
+        }
+    });
+
+    const withdrawalBankCtx = document.getElementById('withdrawalBankChart').getContext('2d');
+    const withdrawalBankChart = new Chart(withdrawalBankCtx, {
+        type: 'pie',
+        data: {
+            labels: {{ chart_withdrawal_labels|tojson }},
+            datasets: [{ data: {{ chart_withdrawal_amounts|tojson }}, backgroundColor: ['#f44336','#e91e63','#9c27b0','#673ab7','#3f51b5','#2196f3','#03a9f4'] }]
+        }
+    });
+</script>
 {% endblock %}

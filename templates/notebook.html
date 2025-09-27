@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+
+{% block title %}Notebook - Balance Monitoring{% endblock %}
+
+{% block extra_css %}
+<style>
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background: #f5f5f5;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.book {
+  width: 800px;
+  height: 500px;
+  perspective: 2000px;
+  position: relative;
+}
+
+.page {
+  width: 100%;
+  height: 100%;
+  background: #fffdf5;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+  position: absolute;
+  transform-origin: left center;
+  transition: transform 0.8s;
+  padding: 20px;
+  overflow-y: auto;
+  display: none;
+}
+
+.page h2 {
+  margin-top: 0;
+  color: #444;
+}
+
+.page .date {
+  font-size: 0.9em;
+  color: #666;
+  margin-bottom: 15px;
+}
+
+.page textarea {
+  width: 100%;
+  height: 300px;
+  border: 1px solid #ccc;
+  outline: none;
+  resize: none;
+  font-size: 15px;
+  line-height: 1.5;
+  margin-bottom: 10px;
+}
+
+.page-controls {
+  text-align: center;
+  margin-top: 20px;
+}
+
+button {
+  padding: 8px 16px;
+  border: none;
+  background: #4CAF50;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-right: 5px;
+}
+button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <main>
+    <div class="book" id="book">
+      <!-- Page 1: Introduction -->
+      <div class="page">
+        <h2>Managing Passdown</h2>
+        <p class="date">App Version: 1.0.0</p>
+        <p>Balance Monitoring System helps you manage deposits, withdrawals, wallets, limits, settlements, topups, and agent balances efficiently.</p>
+      </div>
+
+  <!-- Notebook pages -->
+      {% for page_num in range(notes_list|length) %}
+      <div class="page">
+          <h2>Note {{ page_num + 1 }}</h2>
+          <p class="date">{{ now.strftime("%Y-%m-%d") }}</p>
+          <textarea id="note-{{ page_num }}">{{ notes_list[page_num] }}</textarea>
+          <button onclick="saveNote({{ page_num }})">💾 Save</button>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="page-controls">
+      <button id="prevBtn" disabled>⬅ Prev</button>
+      <button id="nextBtn">Next ➡</button>
+    </div>
+  </main>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Page navigation
+document.addEventListener("DOMContentLoaded", function() {
+    const pages = document.querySelectorAll(".page");
+    let currentPage = 0;
+
+    function showPage(index) {
+        pages.forEach((page, i) => {
+            page.style.display = i === index ? "block" : "none";
+        });
+    }
+
+    document.getElementById("nextBtn").addEventListener("click", () => {
+        if (currentPage < pages.length - 1) {
+            currentPage++;
+            showPage(currentPage);
+            updateButtons();
+        }
+    });
+
+    document.getElementById("prevBtn").addEventListener("click", () => {
+        if (currentPage > 0) {
+            currentPage--;
+            showPage(currentPage);
+            updateButtons();
+        }
+    });
+
+    function updateButtons() {
+        document.getElementById("prevBtn").disabled = currentPage === 0;
+        document.getElementById("nextBtn").disabled = currentPage === pages.length - 1;
+    }
+
+    showPage(currentPage);
+    updateButtons();
+});
+
+// Save note function
+function saveNote(page_number) {
+    const content = document.getElementById(`note-${page_number}`).value;
+
+    fetch("/notes/save", {
+        method: "POST",
+        headers: {"Content-Type": "application/x-www-form-urlencoded"},
+        body: `page_number=${page_number}&content=${encodeURIComponent(content)}`
+    })
+    .then(res => res.json())
+    .then(data => {
+        if(data.status === "success") {
+            alert(`Note ${page_number + 1} saved successfully!`);
+        } else {
+            alert("Failed to save note.");
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        alert("Error saving note.");
+    });
+}
+</script>
+{% endblock %}

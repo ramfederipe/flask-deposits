@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+
+
+{% block content %}
+
+<nav class="accounts-nav">
+    <a href="{{ url_for('accounts_management') }}" class="{% if active_page=='accounts_management' %}active{% endif %}">Accounts Management</a>
+    <a href="{{ url_for('monitoring') }}" class="{% if active_page=='monitoring' %}active{% endif %}">Monitoring</a>
+    <a href="{{ url_for('overview') }}" class="{% if active_page=='overview' %}active{% endif %}">Overview</a>
+    <a href="{{ url_for('wallet_limit') }}" class="{% if active_page=='wallet_limit' %}active{% endif %}">Wallet/Limit</a>
+    <a href="{{ url_for('inactive') }}" class="{% if active_page=='inactive' %}active{% endif %}">Inactive</a>
+</nav>
+
+<!-- Header buttons aligned horizontally -->
+<div class="d-flex gap-2 mb-3">
+    <a href="{{ url_for('monitoring') }}" class="modern-btn">
+        Monitoring
+    </a>
+    <a href="{{ url_for('daily_balance') }}" class="modern-btn">
+        Daily Balance
+    </a>
+    <a href="{{ url_for('gsheet_view') }}" class="modern-btn btn-primary">
+        View Google Sheet Data
+    </a>
+</div>
+
+<!-- Search box -->
+<div class="mb-3">
+    <label for="monitoringSearch">Search Agent or Group:</label>
+    <input type="text" id="monitoringSearch" class="form-control" placeholder="Type to search...">
+</div>
+
+<!-- Agent Balances Table -->
+<table id="monitoringTable" class="table table-striped table-bordered">
+    <thead class="table-dark">
+        <tr>
+            <th>Agent</th>
+            <th>Total Deposit</th>
+            <th>Total Withdrawal</th>
+            <th>Adjustment</th>
+            <th>Settlement</th>
+            <th>Balance</th>
+            <th>Group code</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for agent, data in agents_data.items() %}
+        <tr>
+            <td>{{ agent }}</td>
+            <td>{{ "{:,.2f}".format(data.deposit) }}</td>
+            <td>{{ "{:,.2f}".format(data.withdrawal) }}</td>
+            <td>{{ "{:,.2f}".format(data.adjustment) }}</td>
+            <td>{{ "{:,.2f}".format(data.settlement) }}</td>
+            <td><strong>{{ "{:,.2f}".format(data.balance) }}</strong></td>
+            <td>{{ data.group_code }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- Include jQuery & DataTables -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
+<script>
+$(document).ready(function() {
+    // Initialize DataTable
+    var table = $('#monitoringTable').DataTable({
+        "order": [[0, "asc"]],   // Default sort by Agent
+        "pageLength": 25,        // Default rows per page
+        "lengthMenu": [10, 25, 50, 100],
+    });
+
+    // Custom search input
+    $('#monitoringSearch').on('keyup', function() {
+        table.search(this.value).draw();
+    });
+});
+</script>
+
+<script>
+$(window).on('scroll', function() {
+    if ($(window).scrollTop() > 50) { // adjust threshold
+        $('.accounts-nav').addClass('scrolled');
+    } else {
+        $('.accounts-nav').removeClass('scrolled');
+    }
+});
+
+
+</script>
+
+{% endblock %}

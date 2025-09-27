@@ -1,0 +1,70 @@
+<table id="withdrawalTable" class="excel-table table table-striped table-hover">
+    <thead class="table-dark">
+        <tr>
+            <th>ID</th>
+            <th>Merchant</th>
+            <th>SPID</th>
+            <th>Customer</th>
+            <th>TXNID</th>
+            <th>Currency</th>
+            <th>Bank</th>
+            <th>From Account</th>
+            <th>To Account</th>
+            <th>Agent Number</th>   <!-- ✅ new -->
+            <th>Shop Name</th>      <!-- ✅ new -->
+            <th>Amount</th>
+            <th>Fee</th>
+            <th>R.Bal</th>
+            <th>RefCode</th>
+            <th>Created Time</th>
+            <th>Updated Time</th>
+            <th>Transfered Time</th>
+            <th>Status</th>
+            <th>Audit</th>
+            <th>Note Message</th>
+            <th>Approve Batches By</th>
+            <th>Transaction Note</th>
+            <th>Approve By</th>
+            <th>Matched By</th>
+            <th>Confirm By</th>
+            <th>Imported At</th>
+            <th>Last Updated</th>
+            <th>Deleted</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for w in withdrawals %}
+        <tr class="{{ 'low' if w.r_bal < 1000 else 'medium' if w.r_bal < 5000 else 'high' }}">
+            <td>{{ w.id }}</td>
+            <td>{{ w.merchant_code }}</td>
+            <td>{{ w.spid }}</td>
+            <td>{{ w.customer }}</td>
+            <td>{{ w.txnid }}</td>
+            <td>{{ w.currency }}</td>
+            <td>{{ w.bank }}</td>
+            <td>{{ w.from_account }}</td>
+            <td>{{ w.to_account }}</td>
+            <td>{{ w.agent_number or '' }}</td>   <!-- ✅ new -->
+            <td>{{ w.shop_name or '' }}</td>      <!-- ✅ new -->
+            <td>{{ w.amount }}</td>
+            <td>{{ w.fee }}</td>
+            <td>{{ w.r_bal }}</td>
+            <td>{{ w.ref_code }}</td>
+            <td>{{ w.created_time.strftime("%d/%m/%Y %H:%M:%S") if w.created_time else '' }}</td>
+            <td>{{ w.updated_time.strftime("%d/%m/%Y %H:%M:%S") if w.updated_time else '' }}</td>
+            <td>{{ w.transfered_time.strftime("%d/%m/%Y %H:%M:%S") if w.transfered_time else '' }}</td>
+            <td>{{ w.status }}</td>
+            <td>{{ w.audit }}</td>
+            <td>{{ w.note_message }}</td>
+            <td>{{ w.approve_batches_by }}</td>
+            <td>{{ w.transaction_note }}</td>
+            <td>{{ w.approve_by }}</td>
+            <td>{{ w.matched_by }}</td>
+            <td>{{ w.confirm_by }}</td>
+            <td>{{ w.imported_at.strftime("%d/%m/%Y %H:%M:%S") if w.imported_at else '' }}</td>
+            <td>{{ w.last_updated.strftime("%d/%m/%Y %H:%M:%S") if w.last_updated else '' }}</td>
+            <td>{{ "Yes" if w.deleted else "No" }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

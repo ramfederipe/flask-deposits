@@ -1,0 +1,339 @@
+{% extends "base.html" %}
+
+{% block title %}Update Opening Balance & SDP{% endblock %}
+
+{% block content %}
+<h2>Update Opening Balance & SDP</h2>
+
+<a href="{{ url_for('daily_balance') }}">
+    <button type="button">← Back to Daily Balance</button>
+</a>
+<h3>Opening Balance</h3>
+
+<!-- Tabs Navigation -->
+<div style="margin-top: 20px;">
+    <button type="button" class="tab-btn active" data-tab="obTab">Opening Balance</button>
+    <button type="button" class="tab-btn" data-tab="sdpTab">SDP</button>
+    <button type="button" class="tab-btn" data-tab="agentsTab">Agents Without SDP</button>
+</div>
+
+<div id="agentsTab" class="tab-content" style="display:none;">
+    <h3>Agents Without SDP</h3>
+    <table id="agents-no-sdp-table" border="1" cellpadding="5" style="width:100%;">
+        <thead>
+            <tr>
+                <th>SHOP</th>
+                <th>SDP</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for agent in agents_without_sdp %}
+            <tr>
+                <td contenteditable="true">{{ agent.shop }}</td>
+                <td contenteditable="true">{{ agent.sdp or 0 }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+
+
+<!-- Controls -->
+<div style="margin-bottom:10px;">
+    <form method="POST" action="{{ url_for('clear_opening_balance') }}" style="display:inline;">
+        <button type="submit" onclick="return confirm('Are you sure you want to clear ALL Opening Balance data?')">
+            🗑️ Clear OB
+        </button>
+    </form>
+
+    <form method="POST" action="{{ url_for('clear_sdp') }}" style="display:inline;">
+        <button type="submit" onclick="return confirm('Are you sure you want to clear ALL SDP data?')">
+            🗑️ Clear SDP
+        </button>
+    </form>
+</div>
+
+<button type="button" id="add-row-ob">➕ Add Row</button>
+
+
+
+<!-- Single Form for Saving Both OB and SDP -->
+<form method="POST" action="{{ url_for('update_opening_balance') }}">
+    <!-- Hidden Inputs -->
+    <input type="hidden" name="opening_balance_data" id="opening_balance_data">
+    <input type="hidden" name="sdp_data" id="sdp_data">
+
+    <!-- Opening Balance Section -->
+    <div id="obTab" class="tab-content">
+    <input type="file" id="import-ob-file" accept=".xlsx,.xls">
+    <button type="button" id="import-ob-btn">📥 Import Excel</button>
+    <button type="button" id="export-ob-btn">📤 Export Template</button>
+        <button type="submit" style="margin-top:15px;">💾 Save Opening Balance</button>
+
+    <table id="opening-balance-table" border="1" cellpadding="5" style="width:100%;">
+        <thead>
+            <tr>
+                <th>SHOP</th>
+                <th>OPENING</th>
+                <th>STATUS</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ob in opening_balances %}
+            <tr>
+                <td contenteditable="true">{{ ob.shop }}</td>
+                <td contenteditable="true">{{ ob.opening_balance }}</td>
+                <td contenteditable="true">{{ ob.status }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+</div>
+
+<button type="button" id="add-row-sdp">➕ Add Row</button>
+
+
+    <!-- SDP Section -->
+    <div id="sdpTab" class="tab-content" style="display:none;">
+    <h3 style="margin-top:20px;">SDP</h3>
+    <input type="file" id="import-sdp-file" accept=".xlsx,.xls">
+    <button type="button" id="import-sdp-btn">📥 Import Excel</button>
+    <button type="button" id="export-sdp-btn">📤 Export Template</button>
+
+    <table id="sdp-table" border="1" cellpadding="5" style="width:100%;">
+        <thead>
+            <tr>
+                <th>SHOP</th>
+                <th>SDP</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for sdp in sdps %}
+            <tr>
+                <td contenteditable="true">{{ sdp.shop }}</td>
+                <td contenteditable="true">{{ sdp.sdp }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Save All Button -->
+    <button type="submit" style="margin-top:15px;">💾 Save All</button>
+</form>
+
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+
+<script>
+
+
+// --- Tab Switching ---
+document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        document.querySelectorAll('.tab-content').forEach(tab => tab.style.display='none');
+        document.getElementById(btn.dataset.tab).style.display='block';
+    });
+});
+
+// --- Opening Balance Table ---
+const obTable = document.getElementById('opening-balance-table');
+document.getElementById('add-row-ob').addEventListener('click', () => {
+    const tbody = obTable.querySelector('tbody');
+    const newRow = document.createElement('tr');
+    newRow.innerHTML = '<td contenteditable="true"></td><td contenteditable="true"></td><td contenteditable="true"></td>';
+    tbody.appendChild(newRow);
+});
+
+
+// --- SDP Table ---
+const sdpTable = document.getElementById('sdp-table');
+document.getElementById('add-row-sdp').addEventListener('click', () => {
+    const tbody = sdpTable.querySelector('tbody');
+    const newRow = document.createElement('tr');
+    newRow.innerHTML = '<td contenteditable="true"></td><td contenteditable="true"></td>';
+    tbody.appendChild(newRow);
+});
+
+
+// --- Import SDP Excel ---
+document.getElementById('import-sdp-btn').addEventListener('click', () => {
+    const fileInput = document.getElementById('import-sdp-file');
+    if (!fileInput.files.length) return alert("Select an Excel file first.");
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const json = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+        const tbody = sdpTable.querySelector('tbody');
+        const noSdpTbody = document.querySelector('#agents-no-sdp-table tbody');
+
+        // Build a quick map of existing shops for faster lookup
+        const existingRows = {};
+        tbody.querySelectorAll('tr').forEach(tr => {
+            const shopName = tr.cells[0].textContent.trim();
+            if (shopName) existingRows[shopName] = tr;
+        });
+
+        const fragment = document.createDocumentFragment(); // Faster batch insert
+
+        for (let i = 1; i < json.length; i++) {
+            const row = json[i];
+            if (!row[0]) continue;
+
+            const shop = row[0].toString().trim();
+            const sdpVal = row[1] != null ? row[1] : 0;
+
+            if (existingRows[shop]) {
+                // Update existing row only
+                existingRows[shop].cells[1].textContent = sdpVal;
+                existingRows[shop].style.backgroundColor = '#d4edda';
+                setTimeout(() => existingRows[shop].style.backgroundColor = '', 2000);
+            } else {
+                // Create new row in memory
+                const newRow = document.createElement('tr');
+                newRow.innerHTML = `<td contenteditable="true">${shop}</td><td contenteditable="true">${sdpVal}</td>`;
+                newRow.style.backgroundColor = '#d4edda';
+                fragment.appendChild(newRow);
+                setTimeout(() => newRow.style.backgroundColor = '', 2000);
+            }
+
+            // Remove from "Agents Without SDP"
+            noSdpTbody.querySelectorAll('tr').forEach(tr => {
+                if (tr.cells[0].textContent.trim() === shop) tr.remove();
+            });
+        }
+
+        // Append all new rows at once
+        tbody.appendChild(fragment);
+    };
+
+    reader.readAsArrayBuffer(file);
+});
+
+// --- Form Submit ---
+// --- Form Submit ---
+const saveForm = document.querySelector('form[action="{{ url_for("update_opening_balance") }}"]');
+saveForm.addEventListener('submit', (e) => {
+    // --- Opening Balance ---
+    const obRows = obTable.querySelectorAll('tbody tr');
+    const obData = Array.from(obRows)
+        .map(row => Array.from(row.cells).map(c => c.textContent.trim()).join('\t'))
+        .filter(row => row.split('\t')[0] !== '');
+    document.getElementById('opening_balance_data').value = obData.join('\n');
+
+    // --- SDP Table ---
+    const sdpRows = sdpTable.querySelectorAll('tbody tr');
+    const sdpData = Array.from(sdpRows)
+        .map(row => Array.from(row.cells).map(c => c.textContent.trim()).join('\t'))
+        .filter(row => row.split('\t')[0] !== '');
+
+    // --- Include Agents Without SDP ---
+    const noSdpRows = document.querySelectorAll('#agents-no-sdp-table tbody tr');
+    noSdpRows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        if (cells[0].textContent.trim() !== '' && cells[1].textContent.trim() !== '') {
+            sdpData.push([cells[0].textContent.trim(), cells[1].textContent.trim()].join('\t'));
+            row.remove();
+        }
+    });
+
+    document.getElementById('sdp_data').value = sdpData.join('\n');
+});
+
+
+
+
+// --- Import Opening Balance Excel (optimized) ---
+document.getElementById('import-ob-btn').addEventListener('click', () => {
+    const fileInput = document.getElementById('import-ob-file');
+    if (!fileInput.files.length) return alert("Select an Excel file first.");
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const json = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+        const tbody = obTable.querySelector('tbody');
+
+        // Build a quick map of existing shops for faster lookup
+        const existingRows = {};
+        tbody.querySelectorAll('tr').forEach(tr => {
+            const shopName = tr.cells[0].textContent.trim();
+            if (shopName) existingRows[shopName] = tr;
+        });
+
+        const fragment = document.createDocumentFragment(); // batch insert
+
+        for (let i = 1; i < json.length; i++) { // skip header
+            const row = json[i];
+            if (!row[0]) continue; // skip empty shop
+
+            const shop = row[0].toString().trim();
+            const opening = row[1] != null ? row[1] : 0;
+            const status = row[2] != null ? row[2] : '';
+
+            if (existingRows[shop]) {
+                // Update existing row
+                existingRows[shop].cells[1].textContent = opening;
+                existingRows[shop].cells[2].textContent = status;
+                existingRows[shop].style.backgroundColor = '#d4edda';
+                setTimeout(() => existingRows[shop].style.backgroundColor = '', 2000);
+            } else {
+                // Create new row in memory
+                const newRow = document.createElement('tr');
+                newRow.innerHTML = `
+                    <td contenteditable="true">${shop}</td>
+                    <td contenteditable="true">${opening}</td>
+                    <td contenteditable="true">${status}</td>
+                `;
+                newRow.style.backgroundColor = '#d4edda';
+                fragment.appendChild(newRow);
+                setTimeout(() => newRow.style.backgroundColor = '', 2000);
+            }
+        }
+
+        // Append all new rows at once
+        tbody.appendChild(fragment);
+    };
+
+    reader.readAsArrayBuffer(file);
+});
+
+
+// --- Export Opening Balance Template ---
+document.getElementById('export-ob-btn').addEventListener('click', () => {
+    const headers = [["SHOP", "OPENING", "STATUS"]];
+    const ws = XLSX.utils.aoa_to_sheet(headers);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Opening Balance");
+    XLSX.writeFile(wb, "Opening_Balance_Template.xlsx");
+});
+
+// --- Export SDP Template ---
+document.getElementById('export-sdp-btn').addEventListener('click', () => {
+    const headers = [["SHOP", "SDP"]];
+    const ws = XLSX.utils.aoa_to_sheet(headers);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "SDP");
+    XLSX.writeFile(wb, "SDP_Template.xlsx");
+});
+
+
+</script>
+
+{% endblock %}

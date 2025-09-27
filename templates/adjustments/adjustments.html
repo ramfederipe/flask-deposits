@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Adjustments{% endblock %}
+
+
+{% block content %}
+
+
+
+<p>Choose the section you want to manage:</p>
+
+<div class="adjustments-links" style="margin-bottom: 20px;">
+    <a href="{{ url_for('topups') }}" class="btn btn-primary" style="margin-right:10px;">TopUps</a>
+    <a href="{{ url_for('settlements') }}" class="btn btn-primary" style="margin-right:10px;">Settlements</a>
+    <a href="{{ url_for('dashboard_new') }}" class="btn btn-primary">Dashboard</a>
+</div>
+
+<hr>
+
+<p>
+    Click a button above to manage TopUps, Settlements, or view the Dashboard.
+</p>
+
+{% endblock %}

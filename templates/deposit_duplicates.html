@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}Duplicate Deposits{% endblock %}
+
+{% block content %}
+<h2>Duplicate Deposits</h2>
+
+{% if duplicate_rows %}
+<table border="1" class="table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>TxnID</th>
+            <th>Merchant</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Created</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for d in duplicate_rows %}
+        <tr>
+            <td>{{ d.id }}</td>
+            <td>{{ d.txnid }}</td>
+            <td>{{ d.merchant_code }}</td>
+            <td>{{ d.amount }}</td>
+            <td>{{ d.status }}</td>
+            <td>{{ d.created_time }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>No duplicates found 🎉</p>
+{% endif %}
+{% endblock %}

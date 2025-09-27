@@ -1,0 +1,55 @@
+{% macro render_pagination(page, total_pages, args={}) %}
+<div class="pagination flex gap-1">
+    {# First & Previous #}
+    {% if page > 1 %}
+        <a href="?page=1{% for k,v in args.items() if v %}&{{ k }}={{ v }}{% endfor %}">&laquo; First</a>
+        <a href="?page={{ page-1 }}{% for k,v in args.items() if v %}&{{ k }}={{ v }}{% endfor %}">&lt; Prev</a>
+    {% else %}
+        <span class="disabled">&laquo; First</span>
+        <span class="disabled">&lt; Prev</span>
+    {% endif %}
+
+    {# Page numbers (max 5) #}
+    {% set start_page = page %}
+    {% set end_page = page + 4 %}
+    {% if end_page > total_pages %}
+        {% set end_page = total_pages %}
+    {% endif %}
+    {% if start_page > end_page - 4 %}
+        {% set start_page = end_page - 4 %}
+    {% endif %}
+    {% if start_page < 1 %}
+        {% set start_page = 1 %}
+    {% endif %}
+
+    {% for p in range(start_page, end_page + 1) %}
+        {% if p == page %}
+            <a href="?page={{ p }}{% for k,v in args.items() if v %}&{{ k }}={{ v }}{% endfor %}" class="active">{{ p }}</a>
+        {% else %}
+            <a href="?page={{ p }}{% for k,v in args.items() if v %}&{{ k }}={{ v }}{% endfor %}">{{ p }}</a>
+        {% endif %}
+    {% endfor %}
+
+    {# Next & Last #}
+    {% if page < total_pages %}
+        <a href="?page={{ page+1 }}{% for k,v in args.items() if v %}&{{ k }}={{ v }}{% endfor %}">Next &gt;</a>
+        <a href="?page={{ total_pages }}{% for k,v in args.items() if v %}&{{ k }}={{ v }}{% endfor %}">Last &raquo;</a>
+    {% else %}
+        <span class="disabled">Next &gt;</span>
+        <span class="disabled">Last &raquo;</span>
+    {% endif %}
+</div>
+
+<style>
+.pagination a {
+    padding: 6px 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    text-decoration: none;
+    color: #1e293b;
+    font-weight: 500;
+}
+.pagination a.active { background-color: #1e293b; color: #fff; }
+.pagination span.disabled { padding: 6px 10px; color: #a1a1aa; }
+</style>
+{% endmacro %}

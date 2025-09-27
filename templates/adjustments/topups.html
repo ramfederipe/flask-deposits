@@ -1,0 +1,271 @@
+{% extends "base.html" %}
+{% block title %}Top Up Adjustments{% endblock %}
+
+
+{% block content %}
+{% include 'adjustments/_nav.html' %}
+
+<h3>Top Up Adjustments</h3>
+
+<!-- Import Excel -->
+<div class="mb-3 d-flex align-items-center gap-2">
+    <input type="file" id="excelFile" accept=".xlsx,.xls">
+    <button id="importBtn" class="btn btn-primary btn-sm">Import</button>
+    <button id="saveBtn" class="btn btn-success btn-sm">Save All TopUps</button>
+</div>
+
+<!-- Filter Form -->
+<form method="get" action="{{ url_for('topups') }}" class="mb-3 d-flex flex-wrap gap-2">
+    <input type="date" name="date_from" value="{{ filters.date_from }}" class="form-control">
+    <input type="date" name="date_to" value="{{ filters.date_to }}" class="form-control">
+
+    <select name="brand" class="form-control">
+        <option value="">All Brands</option>
+        {% for b in brands %}
+            <option value="{{ b }}" {% if filters.brand == b %}selected{% endif %}>{{ b }}</option>
+        {% endfor %}
+    </select>
+
+    <select name="wallet" class="form-control">
+        <option value="">All Wallets</option>
+        {% for w in wallets %}
+            <option value="{{ w }}" {% if filters.wallet == w %}selected{% endif %}>{{ w }}</option>
+        {% endfor %}
+    </select>
+
+    <select name="from_agent" class="form-control">
+        <option value="">All From Agents</option>
+        {% for fa in from_agents %}
+            <option value="{{ fa }}" {% if filters.from_agent == fa %}selected{% endif %}>{{ fa }}</option>
+        {% endfor %}
+    </select>
+
+    <select name="to_agent" class="form-control">
+        <option value="">All To Agents</option>
+        {% for ta in to_agents %}
+            <option value="{{ ta }}" {% if filters.to_agent == ta %}selected{% endif %}>{{ ta }}</option>
+        {% endfor %}
+    </select>
+
+    <select name="type" class="form-control">
+        <option value="">All Types</option>
+        {% for t in types %}
+            <option value="{{ t }}" {% if filters.type == t %}selected{% endif %}>{{ t }}</option>
+        {% endfor %}
+    </select>
+
+    <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+    <a href="{{ url_for('topups') }}" class="btn btn-secondary btn-sm">Clear</a>
+</form>
+
+<!-- TopUps Table -->
+<table id="topupTable" class="table table-striped table-bordered">
+    <thead>
+        <tr>
+            <th>DATE</th>
+            <th>BRAND</th>
+            <th>FROM</th>
+            <th>Remarks</th>
+            <th>MC</th>
+            <th>TYPE</th>
+            <th>TO AGENT</th>
+            <th>BRAND</th>
+            <th>WALLET</th>
+            <th>AMOUNT PROCESS</th>
+            <th>FEE</th>
+            <th>REMARKS</th>
+            <th>UPDATED BY</th>
+            <th>STATUS</th>
+            <th>CHECKER</th>
+            <th>ACTIONS</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for t in topups_data %}
+        <tr data-id="{{ t.id }}">
+            <td contenteditable="true">{{ t.date.strftime("%Y-%m-%d %H:%M") if t.date else "" }}</td>
+            <td contenteditable="true">{{ t.brand }}</td>
+            <td contenteditable="true">{{ t.from_agent }}</td>
+            <td contenteditable="true">{{ t.remarks_d }}</td>
+            <td contenteditable="true">{{ t.mc }}</td>
+            <td contenteditable="true">{{ t.type }}</td>
+            <td contenteditable="true">{{ t.to_agent }}</td>
+            <td contenteditable="true">{{ t.brand_to }}</td>
+            <td contenteditable="true">{{ t.wallet }}</td>
+            <td contenteditable="true">{{ "{:,.2f}".format(t.amount_process) if t.amount_process else "" }}</td>
+            <td contenteditable="true">{{ "{:,.2f}".format(t.fee) if t.fee else "" }}</td>
+            <td contenteditable="true">{{ t.remarks_l }}</td>
+            <td contenteditable="true">{{ t.updated_by }}</td>
+            <td contenteditable="true">{{ t.status }}</td>
+            <td contenteditable="true">{{ t.checker }}</td>
+            <td>
+                <button class="btn btn-sm btn-success save-row">Save</button>
+                <button class="btn btn-sm btn-danger delete-row">Delete</button>
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+<!-- Pagination -->
+<div class="d-flex justify-content-between align-items-center mt-2">
+    <div>
+        Page {{ pagination.page }} of {{ pagination.pages }} (Total: {{ pagination.total }})
+    </div>
+    <div>
+        {% if pagination.page > 1 %}
+            <a href="{{ url_for('topups',
+                date_from=filters.date_from,
+                date_to=filters.date_to,
+                brand=filters.brand,
+                wallet=filters.wallet,
+                from_agent=filters.from_agent,
+                to_agent=filters.to_agent,
+                type=filters.type,
+                page=pagination.page-1) }}"
+                class="btn btn-secondary btn-sm">&laquo; Prev</a>
+        {% endif %}
+        {% if pagination.page < pagination.pages %}
+            <a href="{{ url_for('topups',
+                date_from=filters.date_from,
+                date_to=filters.date_to,
+                brand=filters.brand,
+                wallet=filters.wallet,
+                from_agent=filters.from_agent,
+                to_agent=filters.to_agent,
+                type=filters.type,
+                page=pagination.page+1) }}"
+                class="btn btn-secondary btn-sm">Next &raquo;</a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
+/* ------------------ Parse Excel Date ------------------ */
+function parseExcelDate(cell) {
+    if(typeof cell === "number") {
+        const utc_days = cell - 25569;
+        const utc_value = utc_days * 86400;
+        const date_info = new Date(utc_value * 1000);
+        return date_info.toISOString().slice(0,16).replace("T"," ");
+    }
+    const parsed = new Date(cell);
+    if(!isNaN(parsed)) return parsed.toISOString().slice(0,16).replace("T"," ");
+    return "";
+}
+
+/* ------------------ Import Excel ------------------ */
+document.getElementById('importBtn').addEventListener('click', () => {
+    const fileInput = document.getElementById('excelFile');
+    if(fileInput.files.length === 0) return alert('Please select an Excel file');
+
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+
+    reader.onload = function(e) {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const json = XLSX.utils.sheet_to_json(sheet, { header:1, defval:'' });
+        if(json.length < 2) return alert("Excel file is empty");
+
+        const tbody = document.querySelector('#topupTable tbody');
+        tbody.innerHTML = '';
+
+        json.forEach((row, idx) => {
+            if(idx === 0) return; // skip header
+            const tr = document.createElement('tr');
+            row.forEach((cell, i) => {
+                const td = document.createElement('td');
+                td.contentEditable = true;
+                td.innerText = (i===0 && typeof cell==='number') ? parseExcelDate(cell) : cell;
+                tr.appendChild(td);
+            });
+
+            const actionTd = document.createElement('td');
+            const saveBtn = document.createElement('button');
+            saveBtn.className = "btn btn-sm btn-success save-row";
+            saveBtn.innerText = "Save";
+            const delBtn = document.createElement('button');
+            delBtn.className = "btn btn-sm btn-danger delete-row";
+            delBtn.innerText = "Delete";
+            actionTd.appendChild(saveBtn);
+            actionTd.appendChild(delBtn);
+            tr.appendChild(actionTd);
+            tbody.appendChild(tr);
+        });
+    };
+
+    reader.readAsArrayBuffer(file);
+});
+
+/* ------------------ Save All ------------------ */
+document.getElementById('saveBtn').addEventListener('click', () => {
+    const rows = document.querySelectorAll('#topupTable tbody tr');
+    const data = [];
+
+    rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        if(cells.length < 15) return;
+        data.push({
+            date: cells[0].innerText.trim(),
+            brand: cells[1].innerText.trim(),
+            from_agent: cells[2].innerText.trim(),
+            remarks_d: cells[3].innerText.trim(),
+            mc: cells[4].innerText.trim(),
+            type: cells[5].innerText.trim(),
+            to_agent: cells[6].innerText.trim(),
+            brand_to: cells[7].innerText.trim(),
+            wallet: cells[8].innerText.trim(),
+            amount_process: cells[9].innerText.replace(/,/g,"").trim(),
+            fee: cells[10].innerText.replace(/,/g,"").trim(),
+            remarks_l: cells[11].innerText.trim(),
+            updated_by: cells[12].innerText.trim(),
+            status: cells[13].innerText.trim(),
+            checker: cells[14].innerText.trim()
+        });
+    });
+
+    fetch('/topup/save', {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({data})
+    })
+    .then(res => res.json())
+    .then(resp => resp.success ? alert("TopUps saved successfully!") : alert("Error: "+resp.error))
+    .catch(err => alert("AJAX error: "+err));
+});
+
+/* ------------------ Row Save/Delete ------------------ */
+document.addEventListener("click", e => {
+    const row = e.target.closest("tr");
+    if(!row) return;
+    const id = row.dataset.id;
+
+    if(e.target.classList.contains("save-row")) {
+        const cells = row.querySelectorAll('td');
+        const payload = {};
+        const keys = ["date","brand","from_agent","remarks_d","mc","type","to_agent","brand_to","wallet","amount_process","fee","remarks_l","updated_by","status","checker"];
+        keys.forEach((k,i)=> payload[k] = cells[i].innerText.replace(/,/g,"").trim());
+
+        fetch(`/topup/update/${id}`, {
+            method: "POST",
+            headers: {"Content-Type":"application/json"},
+            body: JSON.stringify(payload)
+        })
+        .then(res=>res.json())
+        .then(resp=> resp.success ? alert("TopUp updated!") : alert("Error: "+resp.error));
+    }
+
+    if(e.target.classList.contains("delete-row")) {
+        if(!confirm("Delete this TopUp?")) return;
+        fetch(`/topup/delete/${id}`, { method:"POST" })
+        .then(res=>res.json())
+        .then(resp=> resp.success ? row.remove() : alert("Error: "+resp.error));
+    }
+});
+</script>
+
+{% endblock %}

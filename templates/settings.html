@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Settings{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>System Settings</h2>
+    <form method="POST" action="{{ url_for('settings') }}">
+        <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="enable_delete" name="enable_delete" value="1"
+                   {% if settings.enable_delete %}checked{% endif %}>
+            <label class="form-check-label" for="enable_delete">
+                Enable Delete Function
+            </label>
+        </div>
+        <button type="submit" class="btn btn-primary mt-3">Save Settings</button>
+    </form>
+</div>
+{% endblock %}

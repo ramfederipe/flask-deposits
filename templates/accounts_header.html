@@ -1,0 +1,13 @@
+<!-- accounts_header.html -->
+<nav class="accounts-nav sticky top-0 z-20">
+    <a href="{{ url_for('accounts_management') }}" class="{% if active_page=='accounts_management' %}active{% endif %}">Accounts Management</a>
+    <a href="{{ url_for('monitoring') }}" class="{% if active_page=='monitoring' %}active{% endif %}">Monitoring</a>
+    <a href="{{ url_for('overview') }}" class="{% if active_page=='overview' %}active{% endif %}">Overview</a>
+    <a href="{{ url_for('wallet_limit') }}" class="{% if active_page=='wallet_limit' %}active{% endif %}">Wallet/Limit</a>
+    <a href="{{ url_for('inactive') }}" class="{% if active_page=='inactive' %}active{% endif %}">Inactive</a>
+</nav>
+
+<style>
+
+
+</style>

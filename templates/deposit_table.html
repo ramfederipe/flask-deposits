@@ -1,0 +1,80 @@
+<table id="depositTable" class="excel-table table table-striped table-hover">
+    <thead class="table-dark">
+        <tr>
+            <th>ID</th>
+            <th>Deposit Type</th>
+            <th>Merchant</th>
+            <th>Customer</th>
+            <th>TXNID</th>
+            <th>Currency</th>
+            <th>Bank</th>
+            <th>From Account</th>
+            <th>To Account</th>        <!-- original full string -->
+            <th>Agent Number</th>      <!-- ✅ new -->
+            <th>Shop Name</th>         <!-- ✅ new -->
+            <th>Amount</th>
+            <th>Original Amount</th>
+            <th>Rebalance</th>
+            <th>Fee</th>
+            <th>Status</th>
+            <th>Audit</th>
+            <th>Note Message</th>
+            <th>RefCode</th>
+            <th>Approve By</th>
+            <th>Matched By</th>
+            <th>Confirm By</th>
+            <th>Created Time</th>
+            <th>Updated Time</th>
+            <th>Transfer Time</th>
+            <th>Imported At</th>
+            <th>Last Updated</th>
+            <th>Deleted</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for d in deposits %}
+        {% set amount_val = d.amount | nan_to_empty %}
+        {% set amount_val = 0 if amount_val == '' else amount_val %}
+        {% set row_class = 'low' if amount_val < 1000 else 'medium' if amount_val < 5000 else 'high' %}
+        <tr class="{{ row_class }}">
+            <td>{{ d.id | nan_to_empty }}</td>
+            <td>{{ d.deposit_type | nan_to_empty }}</td>
+            <td>{{ d.merchant_code | nan_to_empty }}</td>
+            <td>{{ d.customer | nan_to_empty }}</td>
+            <td>{{ d.txnid | nan_to_empty }}</td>
+            <td>{{ d.currency | nan_to_empty }}</td>
+            <td>{{ d.bank | nan_to_empty }}</td>
+            <td>{{ d.from_account | nan_to_empty }}</td>
+            <td>{{ d.to_account | nan_to_empty }}</td>
+            <td>{{ d.agent_number or '' }}</td>  <!-- ✅ new -->
+            <td>{{ d.shop_name or '' }}</td>     <!-- ✅ new -->
+            <td>{{ "{:,.2f}".format(d.amount) if d.amount | nan_to_empty != '' else '' }}</td>
+            <td>{{ "{:,.2f}".format(d.original_amount) if d.original_amount | nan_to_empty != '' else '' }}</td>
+            <td>{{ "{:,.2f}".format(d.rebalance) if d.rebalance | nan_to_empty != '' else '' }}</td>
+            <td>{{ "{:,.2f}".format(d.fee) if d.fee | nan_to_empty != '' else '' }}</td>
+            <td>{{ d.status | nan_to_empty }}</td>
+            <td>{{ d.audit | nan_to_empty }}</td>
+            <td>{{ d.note_message | nan_to_empty }}</td>
+            <td>{{ d.refcode | nan_to_empty }}</td>
+            <td>{{ d.approve_by | nan_to_empty }}</td>
+            <td>{{ d.matched_by | nan_to_empty }}</td>
+            <td>{{ d.confirm_by | nan_to_empty }}</td>
+            <td>{{ d.created_time | datetime }}</td>
+            <td>{{ d.updated_time | datetime }}</td>
+            <td>{{ d.transfer_time | datetime }}</td>
+            <td>{{ d.imported_at | datetime }}</td>
+            <td>{{ d.last_updated | datetime }}</td>
+            <td>{{ "Yes" if d.deleted else "No" }}</td>
+            <td>
+                <form action="/deposit/restore/{{ d.id }}" method="post" style="display:inline;">
+                    <button type="submit">♻️</button>
+                </form>
+                <form action="/deposit/permanent_delete/{{ d.id }}" method="post" style="display:inline;">
+                    <button type="submit">🗑️</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

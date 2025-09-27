@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+
+{% block title %}Wallet & Limit Dashboard{% endblock %}
+
+{% block content %}
+
+<nav class="accounts-nav">
+    <a href="{{ url_for('accounts_management') }}" class="{% if active_page=='accounts_management' %}active{% endif %}">Accounts Management</a>
+    <a href="{{ url_for('monitoring') }}" class="{% if active_page=='monitoring' %}active{% endif %}">Monitoring</a>
+    <a href="{{ url_for('overview') }}" class="{% if active_page=='overview' %}active{% endif %}">Overview</a>
+    <a href="{{ url_for('wallet_limit') }}" class="{% if active_page=='wallet_limit' %}active{% endif %}">Wallet/Limit</a>
+    <a href="{{ url_for('inactive') }}" class="{% if active_page=='inactive' %}active{% endif %}">Inactive</a>
+</nav>
+<div class="container-fluid mt-4">
+
+    <h2 class="text-center fw-bold mb-4">📊 Wallet & Limit Dashboard</h2>
+
+    <!-- Quick Access Buttons -->
+    <div class="d-flex justify-content-center mb-4 gap-3 flex-wrap">
+        <a href="{{ url_for('wallet') }}" class="btn btn-outline-primary px-4 py-2 rounded-pill shadow-sm">💰 Wallets</a>
+        <a href="{{ url_for('limit') }}" class="btn btn-outline-success px-4 py-2 rounded-pill shadow-sm">📈 Limits</a>
+    </div>
+
+    <!-- Dashboard Cards -->
+    <div class="row g-4">
+
+        <!-- Wallet Card -->
+        <div class="col-12 col-lg-6">
+            <div class="card shadow-lg border-0 h-100">
+                <div class="card-header text-white" style="background: linear-gradient(90deg, #007bff, #00c6ff);">
+                    <h5 class="mb-0">💰 Wallet Accounts</h5>
+                </div>
+                <div class="card-body d-flex flex-column gap-3">
+
+                    <!-- Charts -->
+                    <div class="chart-container"><canvas id="walletStatusChart"></canvas></div>
+                    <div class="chart-container"><canvas id="walletGroupChart"></canvas></div>
+                    <div class="chart-container"><canvas id="walletBankChart"></canvas></div>
+
+                    <!-- Summary Table -->
+                    <h6 class="fw-bold mt-3">Wallet Summary</h6>
+                    <p><strong>Total Wallets:</strong> {{ total_wallets }}</p>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Status</th>
+                                    <th>Count</th>
+                                    <th>%</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for status, count in wallet_by_status %}
+                                    <tr>
+                                        <td>{{ status or "N/A" }}</td>
+                                        <td>{{ count }}</td>
+                                        <td>{{ "%.1f"|format((count / total_wallets * 100) if total_wallets else 0) }}%</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Limit Card -->
+        <div class="col-12 col-lg-6">
+            <div class="card shadow-lg border-0 h-100">
+                <div class="card-header text-white" style="background: linear-gradient(90deg, #28a745, #6fdc8c);">
+                    <h5 class="mb-0">📈 Account Limits</h5>
+                </div>
+                <div class="card-body d-flex flex-column gap-3">
+
+                    <!-- Charts -->
+                    <div class="chart-container"><canvas id="limitStatusChart"></canvas></div>
+                    <div class="chart-container"><canvas id="limitGroupChart"></canvas></div>
+                    <div class="chart-container"><canvas id="limitBankChart"></canvas></div>
+
+                    <!-- Summary Table -->
+                    <h6 class="fw-bold mt-3">Limit Summary</h6>
+                    <p><strong>Total Limits:</strong> {{ total_limits }}</p>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Status</th>
+                                    <th>Count</th>
+                                    <th>%</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for status, count in limit_by_status %}
+                                    <tr>
+                                        <td>{{ status or "N/A" }}</td>
+                                        <td>{{ count }}</td>
+                                        <td>{{ "%.1f"|format((count / total_limits * 100) if total_limits else 0) }}%</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const chartOptions = { responsive:true, maintainAspectRatio:false };
+
+// Wallet Charts
+new Chart(document.getElementById("walletStatusChart"), {
+    type:'pie',
+    data:{
+        labels: {{ wallet_by_status|map(attribute=0)|list|tojson }},
+        datasets:[{
+            data: {{ wallet_by_status|map(attribute=1)|list|tojson }},
+            backgroundColor:['#007bff','#28a745','#ffc107','#dc3545','#6c757d']
+        }]
+    },
+    options: chartOptions
+});
+
+new Chart(document.getElementById("walletGroupChart"), {
+    type:'bar',
+    data:{
+        labels: {{ wallet_by_group|map(attribute=0)|list|tojson }},
+        datasets:[{
+            label:'Wallets per Group',
+            data: {{ wallet_by_group|map(attribute=1)|list|tojson }},
+            backgroundColor:'#007bff'
+        }]
+    },
+    options: chartOptions
+});
+
+new Chart(document.getElementById("walletBankChart"), {
+    type:'bar',
+    data:{
+        labels: {{ wallet_by_bank|map(attribute=0)|list|tojson }},
+        datasets:[{
+            label:'Wallets per Bank',
+            data: {{ wallet_by_bank|map(attribute=1)|list|tojson }},
+            backgroundColor:'#17a2b8'
+        }]
+    },
+    options: chartOptions
+});
+
+// Limit Charts
+new Chart(document.getElementById("limitStatusChart"), {
+    type:'pie',
+    data:{
+        labels: {{ limit_by_status|map(attribute=0)|list|tojson }},
+        datasets:[{
+            data: {{ limit_by_status|map(attribute=1)|list|tojson }},
+            backgroundColor:['#28a745','#007bff','#ffc107','#dc3545','#6c757d']
+        }]
+    },
+    options: chartOptions
+});
+
+new Chart(document.getElementById("limitGroupChart"), {
+    type:'bar',
+    data:{
+        labels: {{ limit_by_group|map(attribute=0)|list|tojson }},
+        datasets:[{
+            label:'Limits per Group',
+            data: {{ limit_by_group|map(attribute=1)|list|tojson }},
+            backgroundColor:'#28a745'
+        }]
+    },
+    options: chartOptions
+});
+
+new Chart(document.getElementById("limitBankChart"), {
+    type:'bar',
+    data:{
+        labels: {{ limit_by_bank|map(attribute=0)|list|tojson }},
+        datasets:[{
+            label:'Limits per Bank',
+            data: {{ limit_by_bank|map(attribute=1)|list|tojson }},
+            backgroundColor:'#ffc107'
+        }]
+    },
+    options: chartOptions
+});
+</script>
+
+<style>
+.chart-container { position: relative; height: 180px; }
+.table { font-size: 0.88rem; }
+h6 { margin-top: 1rem; font-size: 0.95rem; }
+@media (max-width: 992px) {
+    .chart-container { height: 160px; }
+}
+</style>
+
+<script>
+$(window).on('scroll', function() {
+    if ($(window).scrollTop() > 50) { // adjust threshold
+        $('.accounts-nav').addClass('scrolled');
+    } else {
+        $('.accounts-nav').removeClass('scrolled');
+    }
+});
+</script>
+
+{% endblock %}

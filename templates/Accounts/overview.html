@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% block title %}Daily Balance Overview{% endblock %}
+
+{% block content %}
+
+<nav class="accounts-nav">
+    <a href="{{ url_for('accounts_management') }}" class="{% if active_page=='accounts_management' %}active{% endif %}">Accounts Management</a>
+    <a href="{{ url_for('monitoring') }}" class="{% if active_page=='monitoring' %}active{% endif %}">Monitoring</a>
+    <a href="{{ url_for('overview') }}" class="{% if active_page=='overview' %}active{% endif %}">Overview</a>
+    <a href="{{ url_for('wallet_limit') }}" class="{% if active_page=='wallet_limit' %}active{% endif %}">Wallet/Limit</a>
+    <a href="{{ url_for('inactive') }}" class="{% if active_page=='inactive' %}active{% endif %}">Inactive</a>
+</nav>
+
+<h2>Daily Balance Overview</h2>
+
+<!-- Filters -->
+<div class="mb-3">
+    <label>Filter by Predefined Conditions: <span title="Select a filter to view agents matching specific conditions">ℹ️</span></label>
+<select id="filterSelect">
+    <option value="" title="Show all agents">-- Show All --</option>
+    <option value="over_sdp_dp" title="Agents whose balance is greater than SDP and group code contains DP">
+        Balance exceeded SDP & DP open
+    </option>
+    <option value="below_sdp_no_dp" title="Agents whose balance is below SDP and group code does not contain DP">
+        Balance below SDP & can open DP
+    </option>
+    <option value="below_10k_wd" title="Agents whose balance ≤ 10,000 and group code contains WD">
+        Low balance but still WD open
+    </option>
+    <option value="no_wd_positive" title="Agents whose balance > 0 and group code does not contain WD">
+        Positive balance & can open WD
+    </option>
+</select>
+
+</div>
+
+<!-- Group Code Inclusion -->
+<div class="mb-3">
+    <label>Include Group Codes:</label><br>
+    {% for code in all_group_codes %}
+        <input type="checkbox" class="groupCheckbox" value="{{ code }}" checked> {{ code }} <br>
+    {% endfor %}
+</div>
+
+<table id="overviewTable" class="table table-striped table-bordered">
+    <thead>
+        <tr>
+            <th>Shop</th>
+            <th>Balance</th>
+            <th>SDP</th>
+            <th>Group Code</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for agent in agents_overview %}
+        <tr>
+            <td>{{ agent.shop }}</td>
+            <td>{{ "{:,.2f}".format(agent.balance) }}</td>
+            <td>{{ "{:,.2f}".format(agent.sdp) }}</td>
+            <td>{{ agent.group_code }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- Include jQuery and DataTables -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
+<script>
+$(document).ready(function() {
+    // Initialize DataTable with sorting
+    var table = $('#overviewTable').DataTable({
+        "pageLength": 100,
+        "lengthMenu": [50, 100, 200],
+        "order": [[0, "asc"]],
+        "columnDefs": [
+            { "type": "num-fmt", "targets": [1,2] }, // Balance & SDP numeric
+            { "type": "string", "targets": [0,3] }   // Shop & Group Code
+        ]
+    });
+
+    function applyFilters() {
+        var selectedFilter = $('#filterSelect').val();
+
+        // Get checked group codes
+        var includedGroups = [];
+        $('.groupCheckbox:checked').each(function() {
+            includedGroups.push($(this).val());
+        });
+
+        // Apply a custom search function
+        $.fn.dataTable.ext.search = []; // Clear previous filters
+
+        $.fn.dataTable.ext.search.push(
+            function(settings, data, dataIndex) {
+                var balance = parseFloat(data[1].replace(/,/g, ''));
+                var sdp = parseFloat(data[2].replace(/,/g, ''));
+                var group = data[3];
+
+                var show = true;
+
+                // Predefined filters
+                if(selectedFilter === "over_sdp_dp") {
+                    show = (balance > sdp) && group.toUpperCase().includes("DP");
+                }
+                else if(selectedFilter === "below_sdp_no_dp") {
+                    show = (balance < sdp) && !group.toUpperCase().includes("DP");
+                }
+                else if(selectedFilter === "below_10k_wd") {
+                    show = (balance <= 10000) && group.toUpperCase().includes("WD");
+                }
+                else if(selectedFilter === "no_wd_positive") {
+                    show = (balance > 0) && !group.toUpperCase().includes("WD");
+                }
+
+                // Group code inclusion
+                if(show && includedGroups.length > 0) {
+                    show = includedGroups.includes(group);
+                }
+
+                return show;
+            }
+        );
+
+        table.draw(); // Redraw table to apply filters
+    }
+
+    // Apply filters on change
+    $('#filterSelect').on('change', applyFilters);
+    $('.groupCheckbox').on('change', applyFilters);
+
+    // Initial filter application
+    applyFilters();
+});
+</script>
+
+<script>
+$(window).on('scroll', function() {
+    if ($(window).scrollTop() > 50) { // adjust threshold
+        $('.accounts-nav').addClass('scrolled');
+    } else {
+        $('.accounts-nav').removeClass('scrolled');
+    }
+});
+</script>
+
+
+{% endblock %}

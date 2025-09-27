@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Accounts Overview{% endblock %}
+
+{% block content %}
+<!-- Accounts horizontal navigator -->
+<nav class="bg-gray-800 text-white px-4 py-2 flex gap-4 overflow-x-auto mb-4">
+    <a href="{{ url_for('accounts_management') }}" class="hover:bg-gray-700 px-3 py-1 rounded {% if request.endpoint=='accounts_management' %}bg-gray-700{% endif %}">Accounts Management</a>
+    <a href="{{ url_for('monitoring') }}" class="hover:bg-gray-700 px-3 py-1 rounded {% if request.endpoint=='monitoring' %}bg-gray-700{% endif %}">Monitoring</a>
+    <a href="{{ url_for('overview') }}" class="hover:bg-gray-700 px-3 py-1 rounded {% if request.endpoint=='overview' %}bg-gray-700{% endif %}">Overview</a>
+    <a href="{{ url_for('wallet_limit') }}" class="hover:bg-gray-700 px-3 py-1 rounded {% if request.endpoint=='wallet_limit' %}bg-gray-700{% endif %}">wallet/Limit</a>
+    <a href="{{ url_for('inactive') }}" class="hover:bg-gray-700 px-3 py-1 rounded {% if request.endpoint=='inactive' %}bg-gray-700{% endif %}">Inactive</a>
+</nav>
+
+<h2>Top Agents by Deposits</h2>
+<table class="table table-striped table-bordered">
+    <thead class="table-dark">
+        <tr>
+            <th>Agent</th>
+            <th>Total Deposit Amount</th>
+            <th>Deposit Count</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for d in deposit_stats %}
+        <tr>
+            <td>{{ d.agent }}</td>
+            <td>{{ "{:,.2f}".format(d.total_deposit) }}</td>
+            <td>{{ d.deposit_count }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h2 class="mt-4">Top Agents by Withdrawals</h2>
+<table class="table table-striped table-bordered">
+    <thead class="table-dark">
+        <tr>
+            <th>Agent</th>
+            <th>Total Withdrawal Amount</th>
+            <th>Withdrawal Count</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for w in withdrawal_stats %}
+        <tr>
+            <td>{{ w.agent }}</td>
+            <td>{{ "{:,.2f}".format(w.total_withdrawal) }}</td>
+            <td>{{ w.withdrawal_count }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+
+{% block content %}
+{% include 'adjustments/_nav.html' %}
+<h2>Dashboard</h2>
+
+<div class="row">
+    <!-- TopUps Summary -->
+    <div class="col-md-6">
+        <h4>TopUps</h4>
+        <table class="table table-bordered table-sm">
+            <thead>
+                <tr>
+                    <th>Metric</th>
+                    <th>Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Out Today</td>
+                    <td>{{ topup_dashboard.out_today | round(2) }}</td>
+                </tr>
+                <tr>
+                    <td>In Today</td>
+                    <td>{{ topup_dashboard.in_today | round(2) }}</td>
+                </tr>
+                <tr>
+                    <td>Out This Week</td>
+                    <td>{{ topup_dashboard.out_week | round(2) }}</td>
+                </tr>
+                <tr>
+                    <td>In This Week</td>
+                    <td>{{ topup_dashboard.in_week | round(2) }}</td>
+                </tr>
+                <tr>
+                    <td>Out This Month</td>
+                    <td>{{ topup_dashboard.out_month | round(2) }}</td>
+                </tr>
+                <tr>
+                    <td>In This Month</td>
+                    <td>{{ topup_dashboard.in_month | round(2) }}</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h5>TopUps by Brand</h5>
+        <table class="table table-bordered table-sm">
+            <thead>
+                <tr>
+                    <th>Brand</th>
+                    <th>Count</th>
+                    <th>Total Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for brand, count, total in topup_dashboard.per_brand %}
+                <tr>
+                    <td>{{ brand }}</td>
+                    <td>{{ count }}</td>
+                    <td>{{ total | round(2) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Settlements Summary -->
+    <div class="col-md-6">
+        <h4>Settlements</h4>
+        <table class="table table-bordered table-sm">
+            <thead>
+                <tr>
+                    <th>Metric</th>
+                    <th>Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Today</td>
+                    <td>{{ settlement_dashboard.today[1] if settlement_dashboard.today[1] else 0 | round(2) }}</td>
+                </tr>
+                <tr>
+                    <td>This Week</td>
+                    <td>{{ settlement_dashboard.this_week[1] if settlement_dashboard.this_week[1] else 0 | round(2) }}</td>
+                </tr>
+                <tr>
+                    <td>This Month</td>
+                    <td>{{ settlement_dashboard.this_month[1] if settlement_dashboard.this_month[1] else 0 | round(2) }}</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h5>Settlements by Brand</h5>
+        <table class="table table-bordered table-sm">
+            <thead>
+                <tr>
+                    <th>Brand</th>
+                    <th>Count</th>
+                    <th>Total Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for brand, count, total in settlement_dashboard.per_brand %}
+                <tr>
+                    <td>{{ brand }}</td>
+                    <td>{{ count }}</td>
+                    <td>{{ total | round(2) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <h5>Settlements by Agent</h5>
+        <table class="table table-bordered table-sm">
+            <thead>
+                <tr>
+                    <th>Agent</th>
+                    <th>Count</th>
+                    <th>Total Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for agent, count, total in settlement_dashboard.per_agent %}
+                <tr>
+                    <td>{{ agent }}</td>
+                    <td>{{ count }}</td>
+                    <td>{{ total | round(2) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
