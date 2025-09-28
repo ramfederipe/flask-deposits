@@ -2822,11 +2822,10 @@ def ai_reply():
         return jsonify({"error": str(e)}), 500
 
 
-# Use environment variable to decide mode
+port = int(os.environ.get("PORT", 8080))  # default 8080 if PORT not set
+
 if os.environ.get("FLASK_ENV") == "production":
-    # Production server
-    serve(app, host="0.0.0.0", port=8080)
+    serve(app, host="0.0.0.0", port=port)
 else:
-    # Development server
-    app.run(debug=True)
+    app.run(debug=True, host="0.0.0.0", port=port)
 

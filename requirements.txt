@@ -27,3 +27,4 @@ psycopg2-binary
 openai-whisper
 whisper
 openai
+waitress
