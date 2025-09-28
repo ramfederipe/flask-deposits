@@ -25,4 +25,5 @@ python-dotenv
 gspread
 psycopg2-binary
 openai-whisper
+whisper
 
