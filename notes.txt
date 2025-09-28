@@ -1,0 +1,3 @@
+my local database postgre
+
+DB_USER=postgres DB_PASS=skfjskfjaksfa DB_HOST=localhost DB_PORT=5432 DB_NAME=deposit_system OPENAI_API_KEY=sk-your-local-openai-key FLASK_SECRET_KEY=dev-secret

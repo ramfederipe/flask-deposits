@@ -6,6 +6,7 @@ from tempfile import NamedTemporaryFile
 from zipfile import BadZipFile
 from io import StringIO
 from dotenv import load_dotenv
+from waitress import serve
 
 # Third-party
 import pandas as pd
@@ -29,6 +30,10 @@ from models import (
     Adjustment, Setting, Sdp, Settlement, TopUp, Note,
     SessionLocal, init_db
 )
+
+# Create tables if they don't exist
+Base.metadata.create_all(bind=engine)
+
 
 
 session = SessionLocal()
@@ -81,7 +86,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # --- OpenAI client ---
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-client = OpenAI(api_key=OPENAI_API_KEY)
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # Load Whisper once
 whisper_model = whisper.load_model("base")
@@ -2816,11 +2821,12 @@ def ai_reply():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-if __name__ == '__main__':
+
+# Use environment variable to decide mode
+if os.environ.get("FLASK_ENV") == "production":
+    # Production server
+    serve(app, host="0.0.0.0", port=8080)
+else:
+    # Development server
     app.run(debug=True)
-
-
-
-
-
 

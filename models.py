@@ -1,18 +1,20 @@
+import os
 from sqlalchemy import Column, Integer, String, DateTime, Float, Boolean, Text, create_engine, func
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime
+from dotenv import load_dotenv
 
-
+load_dotenv()  # Load variables from .env
 
 Base = declarative_base()
 
-# --- Engine and Session ---
-DB_USER = "postgres"
-DB_PASS = "skfjskfjaksfa"
-DB_HOST = "localhost"
-DB_PORT = "5432"
-DB_NAME = "deposit_system"
+# --- Engine and Session from .env ---
+DB_USER = os.getenv("DB_USER")
+DB_PASS = os.getenv("DB_PASS")
+DB_HOST = os.getenv("DB_HOST")
+DB_PORT = os.getenv("DB_PORT")
+DB_NAME = os.getenv("DB_NAME")
 
 engine = create_engine(
     f"postgresql+psycopg2://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}",
