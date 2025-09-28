@@ -5,6 +5,7 @@ from calendar import monthrange
 from tempfile import NamedTemporaryFile
 from zipfile import BadZipFile
 from io import StringIO
+from dotenv import load_dotenv
 
 # Third-party
 import pandas as pd
@@ -50,35 +51,43 @@ def init_settings():
             session.commit()
 
 
+# Load .env file (local development)
+load_dotenv()
 
 # --- Flask setup ---
 app = Flask(__name__)
-app.config["SQLALCHEMY_DATABASE_URI"] = f"postgresql+psycopg2://postgres:skfjskfjaksfa@localhost:5432/deposit_system"
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-app.secret_key = "your-very-secret-key"  # replace with something random
-notes_storage = {}  # simple in-memory storage
-
 
 # --- Database config ---
-DB_USER = "postgres"
-DB_PASS = "skfjskfjaksfa"
-DB_HOST = "localhost"
-DB_PORT = "5432"
-DB_NAME = "deposit_system"
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    DB_USER = os.getenv("DB_USER", "postgres")
+    DB_PASS = os.getenv("DB_PASS", "")
+    DB_HOST = os.getenv("DB_HOST", "localhost")
+    DB_PORT = os.getenv("DB_PORT", "5432")
+    DB_NAME = os.getenv("DB_NAME", "deposit_system")
+    DATABASE_URL = f"postgresql+psycopg2://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
-engine = create_engine(
-    "postgresql+psycopg2://postgres:skfjskfjaksfa@localhost:5432/deposit_system",
-    echo=True
-)
+app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-# Correct way: get the API key from the environment variable
-client = OpenAI(api_key="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")
+# Flask secret key
+app.secret_key = os.getenv("FLASK_SECRET_KEY", "dev-secret")
+
+
+
+# --- Database engine ---
+engine = create_engine(app.config["SQLALCHEMY_DATABASE_URI"], echo=True)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+# --- OpenAI client ---
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+client = OpenAI(api_key=OPENAI_API_KEY)
 
 # Load Whisper once
 whisper_model = whisper.load_model("base")
 
+notes_storage = {}  # simple in-memory storage
 
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # --- Create tables ---
 try:
