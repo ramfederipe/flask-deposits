@@ -21,8 +21,11 @@ if not DATABASE_URL:
     DB_NAME = os.getenv("DB_NAME")
     DATABASE_URL = f"postgresql+psycopg2://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
-# Create engine
-engine = create_engine(DATABASE_URL, echo=True)
+# Debug flag (disable echo in production)
+DEBUG = os.getenv("FLASK_ENV") == "development"
+
+# Engine + session
+engine = create_engine(DATABASE_URL, echo=DEBUG)
 SessionLocal = sessionmaker(bind=engine)
 
 class Deposit(Base):

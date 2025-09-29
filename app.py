@@ -31,9 +31,6 @@ from models import (
     SessionLocal, init_db
 )
 
-# Create tables if they don't exist
-Base.metadata.create_all(bind=engine)
-
 
 
 session = SessionLocal()
@@ -47,8 +44,6 @@ session.close()
 # Create all tables defined in your models
 print("OpeningBalance table created!")
 
-init_db()
-
 def init_settings():
     with SessionLocal() as session:
         if not session.query(Setting).first():
@@ -57,41 +52,38 @@ def init_settings():
 
 
 # Load .env file (local development)
+# --- Load .env first ---
 load_dotenv()
 
 # --- Flask setup ---
 app = Flask(__name__)
-
-# --- Database config ---
-DATABASE_URL = os.getenv("DATABASE_URL")
-if not DATABASE_URL:
-    DB_USER = os.getenv("DB_USER", "postgres")
-    DB_PASS = os.getenv("DB_PASS", "")
-    DB_HOST = os.getenv("DB_HOST", "localhost")
-    DB_PORT = os.getenv("DB_PORT", "5432")
-    DB_NAME = os.getenv("DB_NAME", "deposit_system")
-    DATABASE_URL = f"postgresql+psycopg2://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
-
-app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
+app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-
-# Flask secret key
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "dev-secret")
 
+# --- Initialize DB ---
+init_db()
 
-
-# --- Database engine ---
-engine = create_engine(app.config["SQLALCHEMY_DATABASE_URI"], echo=True)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+def init_settings():
+    with SessionLocal() as session:
+        if not session.query(Setting).first():
+            session.add(Setting(enable_delete=False))
+            session.commit()
 
 # --- OpenAI client ---
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-# Load Whisper once
-whisper_model = whisper.load_model("base")
+# --- Whisper model ---
+# Make sure whisper_models/ exists and contains the base model
+whisper_model = whisper.load_model("base", download_root="whisper_models")
 
-notes_storage = {}  # simple in-memory storage
+# --- Example query to test DB connection ---
+if __name__ == "__main__":
+    with SessionLocal() as session:
+        sdps = session.query(Sdp).all()
+        for s in sdps:
+            print(s.id, s.shop, s.sdp, s.group_code, s.chat_id, s.tg_link, s.remarks)
+    print("✅ App initialized successfully!")
 
 
 # --- Create tables ---
