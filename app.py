@@ -74,16 +74,25 @@ def init_settings():
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # --- Whisper model ---
-# Make sure whisper_models/ exists and contains the base model
+# Make sure whisper_models/ exists and c
+#
+#
+# ontains the base model
 whisper_model = whisper.load_model("base", download_root="whisper_models")
 
-# --- Example query to test DB connection ---
+# --- Run Flask app on Clever Cloud ---
 if __name__ == "__main__":
+    # Optional: quick DB test
     with SessionLocal() as session:
         sdps = session.query(Sdp).all()
         for s in sdps:
             print(s.id, s.shop, s.sdp, s.group_code, s.chat_id, s.tg_link, s.remarks)
     print("✅ App initialized successfully!")
+
+    # Start server (Clever Cloud injects $PORT)
+    port = int(os.environ.get("PORT", 5000))
+    # Use waitress for production
+    serve(app, host="0.0.0.0", port=port)
 
 
 # --- Create tables ---
